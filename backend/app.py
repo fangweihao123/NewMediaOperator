@@ -44,7 +44,7 @@ class DouyinAccount(db.Model):
 class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     video_id = db.Column(db.String(100), unique=True, nullable=False)
-    des c = db.Column(db.String(500))
+    desc = db.Column(db.String(500))
     cover_url = db.Column(db.String(500))
     video_url = db.Column(db.String(500))
     create_time = db.Column(db.DateTime, default=datetime.utcnow)
