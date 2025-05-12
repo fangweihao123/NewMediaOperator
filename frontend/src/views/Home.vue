@@ -15,6 +15,9 @@
             <el-button type="primary" @click="generateQRCode" v-if="!qrcode">
               生成二维码
             </el-button>
+            <el-button type="primary" @click="RedirectTODouyinAuthPage">
+              跳转到抖音登录页面
+            </el-button>
           </div>
           <div v-else class="account-info">
             <el-avatar :size="64" :src="accountInfo.avatar"></el-avatar>
@@ -84,6 +87,14 @@ export default {
     }
   },
   methods: {
+    async RedirectTODouyinAuthPage() {
+      try {
+        const response = await api.get('/auth')
+        window.location.href = response.data.authUrl;
+      } catch (error) {
+        this.$message.error('跳转失败', error);
+      }
+    },
     async generateQRCode() {
       try {
         const response = await api.get('/qrcode')
