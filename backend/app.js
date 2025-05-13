@@ -29,7 +29,7 @@ app.use(express.json());
 // 抖音开放平台配置
 const DOUYIN_CLIENT_KEY = process.env.DOUYIN_CLIENT_KEY || 'aw48uuo6r8xm48xb';
 const DOUYIN_CLIENT_SECRET = process.env.DOUYIN_CLIENT_SECRET || '7ef22bcf82420090464ee81c7f1e0651';
-const DOUYIN_REDIRECT_URI = 'https://cd04-240e-391-cda-6bf0-c9de-59a0-c469-b5cb.ngrok-free.app/auth-success';
+const DOUYIN_REDIRECT_URI = 'https://a022-116-148-240-41.ngrok-free.app/auth-success';
 // 抖音是支持投稿能力，但是需要申请，等布局确定之后可以显示
 const DOUYIN_SCOPES = 'trial.whitelist,user_info,video.list.bind';
 
@@ -54,6 +54,9 @@ const AuthInfo = sequelize.define('AuthInfo', {
     },
 });
 
+// 创建 Douyin_UserService 实例
+const douyinUserService = new Douyin_UserService(AuthInfo);
+
 // 初始化数据库
 (async () => {
     try {
@@ -66,7 +69,7 @@ const AuthInfo = sequelize.define('AuthInfo', {
 })();
 
 app.get('/api/userinfo', async (req, res) => {
-    const userInfos = await Douyin_UserService.GetAuthUserInfo();
+    const userInfos = await douyinUserService.GetAuthUserInfo();
     res.json(userInfos);
 });
 
@@ -95,7 +98,8 @@ app.post('/api/auth/callback', async (req, res) => {
         });
         const messageRes = await client.oauthAccessToken(params);
         if(messageRes.message === 'success'){
-            const { access_token, open_id } = messageRes.data;
+            const access_token = messageRes.data.accessToken;
+            const open_id = messageRes.data.openId;
             await AuthInfo.create({
                 open_id: open_id,
                 code: code,

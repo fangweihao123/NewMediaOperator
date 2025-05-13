@@ -1,15 +1,16 @@
 const axios = require('axios');
 
 class Douyin_UserService{
-    constructor(){
+    constructor(AuthInfo){
         this.baseUrl = 'https://open.douyin.com/oauth/userinfo/';
         this.clientKey = process.env.DOUYIN_CLIENT_KEY;
         this.clientSecret = process.env.DOUYIN_CLIENT_SECRET;
+        this.AuthInfo = AuthInfo;
     }
 
     async GetAuthUserInfo(){
         try {
-            const authInfos = await AuthInfo.findAll();
+            const authInfos = await this.AuthInfo.findAll();
             const results = [];
 
             for (const authInfo of authInfos) {
@@ -28,7 +29,6 @@ class Douyin_UserService{
             throw error;
         }
     }
-
 }
 
-module.exports = new Douyin_UserService();
+module.exports = Douyin_UserService;
