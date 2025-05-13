@@ -12,11 +12,14 @@
           <div class="qrcode-container" v-if="!isBound">
             <img :src="'data:image/png;base64,' + qrcode" v-if="qrcode" />
             <p>请使用抖音APP扫描二维码绑定账号</p>
-            <el-button type="primary" @click="generateQRCode" v-if="!qrcode">
-              生成二维码
-            </el-button>
             <el-button type="primary" @click="RedirectTODouyinAuthPage">
               跳转到抖音登录页面
+            </el-button>
+            <el-button type="primary" @click="initializeCrawler">
+              手动登录抖音账号
+            </el-button>
+            <el-button type="primary" @click="GetMessage">
+              获取私信信息
             </el-button>
           </div>
           <div v-else class="account-info">
@@ -95,29 +98,21 @@ export default {
         this.$message.error('跳转失败', error);
       }
     },
-    async generateQRCode() {
+    async initializeCrawler() {
       try {
-        const response = await api.get('/qrcode')
-        this.qrcode = response.data.qrcode
-        this.qrId = response.data.qr_id
-        this.startCheckingQRCode()
+        const response = await api.post('/crawler/init')
+        this.$message.success('初始化成功')
       } catch (error) {
-        this.$message.error('生成二维码失败')
+        this.$message.error('初始化失败')
       }
     },
-    startCheckingQRCode() {
-      this.checkInterval = setInterval(async () => {
-        try {
-          const response = await api.get(`/qrcode/status/${this.qrId}`)
-          if (response.data.status === 'success') {
-            clearInterval(this.checkInterval)
-            this.isBound = true
-            this.getAccountInfo(response.data.sec_uid)
-          }
-        } catch (error) {
-          console.error('检查二维码状态失败', error)
-        }
-      }, 2000)
+    async GetMessage() {
+      try {
+        const response = await api.get('/crawler/messages')
+        this.messages = response.data
+      } catch (error) {
+        this.$message.error('获取私信信息失败')
+      }
     },
     async getAccountInfo(sec_uid) {
       try {

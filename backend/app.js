@@ -6,6 +6,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 const QRCode = require('qrcode');
 const winston = require('winston');
 const Douyin_UserService = require('./service/Douyin_UserService');
+const Douyin_CrawlerService = require('./service/Douyin_CrawlerService');
 require('dotenv').config();
 
 // 配置日志
@@ -29,7 +30,7 @@ app.use(express.json());
 // 抖音开放平台配置
 const DOUYIN_CLIENT_KEY = process.env.DOUYIN_CLIENT_KEY || 'aw48uuo6r8xm48xb';
 const DOUYIN_CLIENT_SECRET = process.env.DOUYIN_CLIENT_SECRET || '7ef22bcf82420090464ee81c7f1e0651';
-const DOUYIN_REDIRECT_URI = 'https://a022-116-148-240-41.ngrok-free.app/auth-success';
+const DOUYIN_REDIRECT_URI = 'https://418e-116-148-240-41.ngrok-free.app/auth-success';
 // 抖音是支持投稿能力，但是需要申请，等布局确定之后可以显示
 const DOUYIN_SCOPES = 'trial.whitelist,user_info,video.list.bind';
 
@@ -56,6 +57,50 @@ const AuthInfo = sequelize.define('AuthInfo', {
 
 // 创建 Douyin_UserService 实例
 const douyinUserService = new Douyin_UserService(AuthInfo);
+
+// 初始化爬虫服务
+let crawlerInitialized = false;
+
+// 初始化爬虫
+app.post('/api/crawler/init', async (req, res) => {
+    try {
+        await Douyin_CrawlerService.initialize();
+        await Douyin_CrawlerService.login();
+        crawlerInitialized = true;
+        res.json({ status: 'success' });
+    } catch (error) {
+        console.error('Error initializing crawler:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 获取视频列表
+app.get('/api/crawler/videos/:secUid', async (req, res) => {
+    try {
+        if (!crawlerInitialized) {
+            throw new Error('Crawler not initialized');
+        }
+        const videos = await Douyin_CrawlerService.getVideos(req.params.secUid);
+        res.json(videos);
+    } catch (error) {
+        console.error('Error fetching videos:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 获取私信列表
+app.get('/api/crawler/messages', async (req, res) => {
+    try {
+        if (!crawlerInitialized) {
+            throw new Error('Crawler not initialized');
+        }
+        const messages = await Douyin_CrawlerService.getMessages();
+        res.json(messages);
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // 初始化数据库
 (async () => {
