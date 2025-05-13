@@ -1,3 +1,5 @@
+const { default: Client, OauthAccessTokenRequest } = require('@open-dy/open_api_sdk');
+const { default: CredentialClient } = require('@open-dy/open_api_credential');
 const express = require('express');
 const cors = require('cors');
 const { Sequelize, DataTypes } = require('sequelize');
@@ -24,8 +26,8 @@ app.use(cors());
 app.use(express.json());
 
 // 抖音开放平台配置
-const DOUYIN_CLIENT_KEY = process.env.DOUYIN_CLIENT_KEY || 'your_client_key';
-const DOUYIN_CLIENT_SECRET = process.env.DOUYIN_CLIENT_SECRET || 'your_client_secret';
+const DOUYIN_CLIENT_KEY = process.env.DOUYIN_CLIENT_KEY || 'aw48uuo6r8xm48xb';
+const DOUYIN_CLIENT_SECRET = process.env.DOUYIN_CLIENT_SECRET || '7ef22bcf82420090464ee81c7f1e0651';
 const DOUYIN_REDIRECT_URI = 'http://localhost:5000/api/callback';
 
 // 数据库配置
@@ -74,10 +76,19 @@ app.post('/api/auth/callback', async (req, res) => {
     try {
         const { code, state } = req.body;
         logger.info(`receive code: ${code}, state: ${state}`);
-        
-        // 保存授权码到数据库
-        await AuthInfo.create({ code });
-        
+        const client = new Client({clientKey:DOUYIN_CLIENT_KEY, clientSecret:DOUYIN_CLIENT_SECRET});
+        const params = new OauthAccessTokenRequest({
+            clientKey: DOUYIN_CLIENT_KEY,
+            clientSecret: DOUYIN_CLIENT_SECRET,
+            code:code,
+            grantType:'authorization_code'
+        });
+        const messageRes = await client.oauthAccessToken(params);
+        if(messageRes.message === 'success'){
+            console.log('Success receive access token', messageRes.data.access_token);
+        }else{
+            console.log('Error response from douyin', messageRes.data);
+        }
         res.json({
             status: 'success',
             code,

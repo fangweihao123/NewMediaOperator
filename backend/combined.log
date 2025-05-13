@@ -2,3 +2,56 @@
 {"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T01:41:36.926Z"}
 {"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T01:58:18.595Z"}
 {"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T01:58:18.600Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T02:54:18.188Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T02:54:18.194Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:09:29.511Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:09:29.518Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:31:49.393Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:31:49.398Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:34:47.598Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:34:47.603Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:35:37.119Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:35:37.124Z"}
+{"level":"info","message":"receive code: de3f104996adb51bPEFuCLF0UZXQ4QBEt4J7_lq, state: ","timestamp":"2025-05-13T03:39:00.809Z"}
+{"level":"error","message":"Error in callback: CredentialClient is not a constructor","timestamp":"2025-05-13T03:39:00.810Z"}
+{"level":"info","message":"receive code: de3f104996adb51bPEFuCLF0UZXQ4QBEt4J7_lq, state: ","timestamp":"2025-05-13T03:40:21.104Z"}
+{"level":"error","message":"Error in callback: CredentialClient is not a constructor","timestamp":"2025-05-13T03:40:21.104Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:43:44.809Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:43:44.814Z"}
+{"level":"info","message":"receive code: de3f104996adb51bM6fR49Mu6KID2jSWmjd7_lf, state: ","timestamp":"2025-05-13T03:44:27.028Z"}
+{"level":"error","message":"Error in callback: Client is not defined","timestamp":"2025-05-13T03:44:27.028Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:45:05.636Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:45:05.641Z"}
+{"level":"info","message":"receive code: de3f104996adb51bM6fR49Mu6KID2jSWmjd7_lf, state: ","timestamp":"2025-05-13T03:45:13.925Z"}
+{"level":"error","message":"Error in callback: Client is not a constructor","timestamp":"2025-05-13T03:45:13.925Z"}
+{"level":"info","message":"receive code: de3f104996adb51b0n1iFSqhFyTgsgJ79JMK_lf, state: ","timestamp":"2025-05-13T03:45:38.221Z"}
+{"level":"error","message":"Error in callback: Client is not a constructor","timestamp":"2025-05-13T03:45:38.222Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:50:50.003Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:50:50.009Z"}
+{"level":"info","message":"receive code: de3f104996adb51b0n1iFSqhFyTgsgJ79JMK_lf, state: ","timestamp":"2025-05-13T03:50:56.269Z"}
+{"level":"error","message":"Error in callback: Client is not a constructor","timestamp":"2025-05-13T03:50:56.270Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:53:24.737Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:53:24.745Z"}
+{"level":"info","message":"receive code: de3f104996adb51b0n1iFSqhFyTgsgJ79JMK_lf, state: ","timestamp":"2025-05-13T03:53:27.795Z"}
+{"level":"error","message":"Error in callback: Client is not a constructor","timestamp":"2025-05-13T03:53:27.796Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:53:36.862Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:53:36.867Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:55:28.462Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:55:28.468Z"}
+{"level":"info","message":"receive code: de3f104996adb51byh5pHlbthcE4QRvKafai_lf, state: ","timestamp":"2025-05-13T03:55:42.510Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:56:38.323Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:56:38.331Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T03:56:39.793Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T03:56:39.806Z"}
+{"level":"info","message":"receive code: de3f104996adb51byh5pHlbthcE4QRvKafai_lf, state: ","timestamp":"2025-05-13T03:56:45.172Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T05:12:52.718Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T05:12:52.731Z"}
+{"level":"info","message":"receive code: de3f104996adb51bwKwyPVtCtLbOKvUgMSrT_lq, state: ","timestamp":"2025-05-13T05:13:20.724Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T05:17:39.691Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T05:17:39.699Z"}
+{"level":"info","message":"receive code: de3f104996adb51bJrOY7zbNZWJFt3tLXyFU_lf, state: ","timestamp":"2025-05-13T05:18:09.130Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T05:18:43.945Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T05:18:43.952Z"}
+{"level":"info","message":"receive code: de3f104996adb51bijqWXjuekUulwTh3yjbw_hl, state: ","timestamp":"2025-05-13T05:19:06.416Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-05-13T05:19:33.581Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-13T05:19:33.590Z"}
