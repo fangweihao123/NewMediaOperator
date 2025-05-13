@@ -11,6 +11,9 @@ services:
       - backend
     networks:
       - app-network
+    environment:
+      - NODE_ENV=production
+      - VUE_APP_API_URL=http://localhost:5001
 
   backend:
     build:
@@ -19,10 +22,9 @@ services:
     ports:
       - "5001:5000"
     environment:
-      - FLASK_ENV=production
-      - FLASK_APP=app.py
+      - NODE_ENV=production
     volumes:
-      - ./backend/instance:/app/instance
+      - ./backend/data:/app/data
     networks:
       - app-network
 
