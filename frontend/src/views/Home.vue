@@ -15,11 +15,11 @@
             <el-button type="primary" @click="RedirectTODouyinAuthPage">
               跳转到抖音登录页面
             </el-button>
-            <el-button type="primary" @click="initializeCrawler">
-              手动登录抖音账号
+            <el-button type="primary" @click="connectToAdsPower">
+              打开AdsPower页面
             </el-button>
-            <el-button type="primary" @click="GetMessage">
-              获取私信信息
+            <el-button type="primary" @click="getVideosFromAdsPower">
+              获取视频列表
             </el-button>
           </div>
           <div v-else class="account-info">
@@ -98,50 +98,32 @@ export default {
         this.$message.error('跳转失败', error);
       }
     },
-    async initializeCrawler() {
+    async connectToAdsPower() {
       try {
-        const response = await api.post('/crawler/init')
-        this.$message.success('初始化成功')
+        const response = await api.post('/selenium/connect', {
+          profileId: this.accountInfo.nickname
+        });
+        this.$message.success('连接成功');
       } catch (error) {
-        this.$message.error('初始化失败')
+        this.$message.error('连接失败: ' + error.message);
       }
     },
-    async GetMessage() {
+    async getVideosFromAdsPower() {
       try {
-        const response = await api.get('/crawler/messages')
-        this.messages = response.data
+        const response = await api.get('/selenium/videos');
+        this.videos = response.data.videos;
+        this.$message.success('获取视频信息成功');
       } catch (error) {
-        this.$message.error('获取私信信息失败')
+        this.$message.error('获取视频信息失败: ' + error.message);
       }
     },
-    async getAccountInfo(sec_uid) {
+    async closeAdsPower() {
       try {
-        const response = await api.get(`/account/${sec_uid}`)
-        this.accountInfo = response.data
-        this.getVideos(sec_uid)
+        await api.post('/selenium/close');
+        this.$message.success('浏览器已关闭');
       } catch (error) {
-        this.$message.error('获取账号信息失败')
+        this.$message.error('关闭浏览器失败: ' + error.message);
       }
-    },
-    async getVideos(sec_uid) {
-      try {
-        const response = await api.get(`/videos/${sec_uid}`)
-        this.videos = response.data
-      } catch (error) {
-        this.$message.error('获取视频列表失败')
-      }
-    },
-    async updateVideos() {
-      try {
-        const response = await api.post(`/videos/update/${this.accountInfo.sec_uid}`)
-        this.$message.success('更新成功')
-        this.getVideos(this.accountInfo.sec_uid)
-      } catch (error) {
-        this.$message.error('更新视频列表失败')
-      }
-    },
-    openVideo(url) {
-      window.open(url, '_blank')
     }
   },
   beforeUnmount() {
