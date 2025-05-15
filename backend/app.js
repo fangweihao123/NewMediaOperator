@@ -6,7 +6,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 const QRCode = require('qrcode');
 const winston = require('winston');
 const Douyin_UserService = require('./service/Douyin_UserService');
-const seleniumService = require('./services/seleniumService');
+const SeleniumService = require('./services/seleniumService');
 require('dotenv').config();
 
 // 配置日志
@@ -54,8 +54,19 @@ const AuthInfo = sequelize.define('AuthInfo', {
     },
 });
 
+const VideoListInfo = sequelize.define('VideoListInfo', {
+    video_desc: {
+        type: DataTypes.STRING(100),
+        primaryKey: true
+    },
+    video_share_url: {
+        type: DataTypes.STRING(200)
+    }
+});
+
 // 创建 Douyin_UserService 实例
 const douyinUserService = new Douyin_UserService(AuthInfo);
+const seleniumService = new SeleniumService(VideoListInfo);
 
 // 初始化数据库
 (async () => {

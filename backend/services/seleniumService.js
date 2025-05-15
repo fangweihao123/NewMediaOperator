@@ -3,11 +3,12 @@ const chrome = require('selenium-webdriver/chrome');
 const CDP = require('chrome-remote-interface');
 
 class SeleniumService {
-    constructor() {
+    constructor(videoListInfo) {
         this.driver = null;
         this.adsPowerUrl = 'http://local.adspower.net:50325';
         this.debugPort = null;
         this.requestId = null;
+        this.videoListInfo = videoListInfo;
 
     }
 
@@ -59,20 +60,23 @@ class SeleniumService {
                     console.log(requestId);
                     console.log(request.headers);
                     console.log(resourseType);
-                    //console.log(responseStatusCode);
-                    //console.log(responseStatusText);
-                    //console.log(request.url);
                     const responseData = await Fetch.getResponseBody({requestId});
                     let jsonData;
-                    if(responseData.body.length > 10) {
+                    if(request.headers.Accept.includes('text')) {
                         if(responseData.base64Encoded) {
                             const decodedBody = Buffer.from(responseData.body, 'base64').toString('utf-8');
                             jsonData = JSON.parse(decodedBody);
                         }else{
                             jsonData = JSON.parse(responseData.body);
                         }
+                        console.log(jsonData);
+                        for (const video of jsonData.aweme_list) {
+                            await this.videoListInfo.create({
+                                video_desc: video.desc,
+                                video_share_url: video.share_url
+                            });
+                        }
                     }
-                    console.log(jsonData);
                 }
                 Fetch.continueRequest({requestId});
             });
@@ -80,53 +84,8 @@ class SeleniumService {
                 patterns: [{requestStage:'Response'}]
             });
             await this.driver.get('https://www.douyin.com/user/self?from_tab_name=main&showTab=post');
-            // Wait for network requests
-            await Network.enable();
-            /*Network.responseReceived(async ({ requestId, loaderId, timestamp, type, response, hasExtraInfo, frameId}) => {
-                if (response.url.includes('https://www-hj.douyin.com/aweme/v1/web/aweme/post/')) {
-                    console.log(response);
-                }
-            });
             
-            Network.responseReceivedExtraInfo(async ({ requestId, blockedCookies, headers, resourceIPAddressSpace, statusCode, hasExtraInfo, frameId}) => {
-                if (response.url.includes('https://www-hj.douyin.com/aweme/v1/web/aweme/post/')) {
-                    console.log(response);
-                }
-            });*/
-            Network.responseReceived(async ({ requestId, loaderId, timestamp, type, response, hasExtraInfo, frameId}) => {
-                if (response.url.includes('https://www-hj.douyin.com/aweme/v1/web/aweme/post/')) {
-                    //const responseData = Fetch.getResponseBody({requestId});
-                    //console.log(responseData.body);
-                }
-            });
-            
-            // Enable network interception
-            return true;
             // 等待视频列表加载
-            await this.driver.wait(until.elementLocated(By.className('video-feed-item')), 10000);
-
-            // 获取视频列表
-            const videoElements = await this.driver.findElements(By.className('video-feed-item'));
-            const videos = [];
-
-            for (const video of videoElements) {
-                try {
-                    const videoInfo = {
-                        title: await video.findElement(By.className('title')).getText(),
-                        author: await video.findElement(By.className('author')).getText(),
-                        likes: await video.findElement(By.className('like-count')).getText(),
-                        comments: await video.findElement(By.className('comment-count')).getText(),
-                        shares: await video.findElement(By.className('share-count')).getText(),
-                        url: await video.findElement(By.tagName('a')).getAttribute('href')
-                    };
-                    videos.push(videoInfo);
-                } catch (error) {
-                    console.error('获取单个视频信息失败:', error);
-                    continue;
-                }
-            }
-
-            return videos;
         } catch (error) {
             console.error('获取视频信息失败:', error);
             throw error;
@@ -142,4 +101,4 @@ class SeleniumService {
     }
 }
 
-module.exports = new SeleniumService(); 
+module.exports = SeleniumService; 
