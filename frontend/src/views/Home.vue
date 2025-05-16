@@ -21,13 +21,15 @@
             <el-button type="primary" @click="getVideosFromAdsPower">
               获取视频列表
             </el-button>
-          </div>
-          <div v-else class="account-info">
-            <el-avatar :size="64" :src="accountInfo.avatar"></el-avatar>
-            <h3>{{ accountInfo.nickname }}</h3>
-            <p>{{ accountInfo.signature }}</p>
-            <el-button type="primary" @click="updateVideos">
-              更新视频列表
+            <el-input
+              v-model="replyMessage"
+              type="textarea"
+              :rows="2"
+              placeholder="请输入要回复的消息内容"
+              style="margin-bottom: 10px;"
+            ></el-input>
+            <el-button type="primary" @click="replayStrangerMessages">
+              回复陌生人消息
             </el-button>
           </div>
         </el-card>
@@ -46,21 +48,24 @@
               <el-table-column prop="desc" label="描述" />
               <el-table-column label="封面">
                 <template #default="scope">
-                  <el-image 
-                    style="width: 100px; height: 100px"
-                    :src="scope.row.cover_url"
-                    :preview-src-list="[scope.row.cover_url]">
-                  </el-image>
+                  <a :href="scope.row.cover_url" target="_blank">
+                    <el-image 
+                      style="width: 100px; height: 100px"
+                      :src="scope.row.cover_url"
+                      :preview-src-list="[scope.row.cover_url]">
+                    </el-image>
+                  </a>
                 </template>
               </el-table-column>
               <el-table-column label="操作">
                 <template #default="scope">
-                  <el-button 
-                    size="small" 
-                    type="primary"
-                    @click="openVideo(scope.row.video_url)">
-                    查看视频
-                  </el-button>
+                  <a :href="scope.row.video_url" target="_blank">
+                    <el-button 
+                      size="small" 
+                      type="primary">
+                      查看视频
+                    </el-button>
+                  </a>
                 </template>
               </el-table-column>
             </el-table>
@@ -86,7 +91,8 @@ export default {
       isBound: false,
       accountInfo: {},
       videos: [],
-      checkInterval: null
+      checkInterval: null,
+      replyMessage: ''
     }
   },
   methods: {
@@ -115,6 +121,16 @@ export default {
         this.$message.success('获取视频信息成功');
       } catch (error) {
         this.$message.error('获取视频信息失败: ' + error.message);
+      }
+    },
+    async replayStrangerMessages() {
+      try {
+        const response = await api.post('/selenium/replymessages',{
+          msg: this.replyMessage
+        });
+        this.$message.success('获取消息成功');
+      } catch (error) {
+        this.$message.error('获取消息失败: ' + error.message);
       }
     },
     async closeAdsPower() {

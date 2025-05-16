@@ -154,6 +154,17 @@ app.get('/api/selenium/videos', async (req, res) => {
     }
 });
 
+app.post('/api/selenium/replymessages', async(req, res) => {
+    try {
+        const { msg } = req.body;
+        const messages = await seleniumService.replyMessages(msg);
+        res.json({ status: 'success', message: '回复成功' });
+    } catch (error) {
+        console.error('获取消息失败:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // 关闭浏览器
 app.post('/api/selenium/close', async (req, res) => {
     try {
