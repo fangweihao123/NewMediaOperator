@@ -21,17 +21,28 @@
             <el-button type="primary" @click="getVideosFromAdsPower">
               获取视频列表
             </el-button>
-            <el-input
+            
+          </div>
+        </el-card>
+        <el-card class="box-card">
+          <template #header>
+            <div class="card-header">
+              <span>私信功能</span>
+            </div>
+          </template> 
+          <el-input
               v-model="replyMessage"
               type="textarea"
               :rows="2"
               placeholder="请输入要回复的消息内容"
               style="margin-bottom: 10px;"
             ></el-input>
-            <el-button type="primary" @click="replayStrangerMessages">
-              回复陌生人消息
-            </el-button>
-          </div>
+              <el-button type="primary" @click="replayStrangerMessages">
+                回复陌生人消息  
+              </el-button>
+              <el-button type="primary" @click="getStrangerMessages">
+                获取私信列表  
+              </el-button>
         </el-card>
       </el-col>
 
@@ -72,7 +83,23 @@
           </div>
           <div v-else class="empty-tip">
             <p>暂无视频数据</p>
-          </div>
+          </div>  
+        </el-card>
+        <el-card class="box-card">
+          <template #header>
+            <div class="card-header">
+              <span>私信列表</span>
+            </div>
+          </template> 
+            <div v-if="messages.length > 0">
+              <el-table :data="messages" style="width: 100%">
+              <el-table-column prop="text" label="信息" />
+              
+              </el-table>
+            </div>
+            <div v-else class="empty-tip">
+              <p>暂无私信数据</p>
+            </div>
         </el-card>
       </el-col>
     </el-row>
@@ -92,7 +119,8 @@ export default {
       accountInfo: {},
       videos: [],
       checkInterval: null,
-      replyMessage: ''
+      replyMessage: '',
+      messages: []
     }
   },
   methods: {
@@ -121,6 +149,14 @@ export default {
         this.$message.success('获取视频信息成功');
       } catch (error) {
         this.$message.error('获取视频信息失败: ' + error.message);
+      }
+    },
+    async getStrangerMessages() {
+      try {
+        const response = await api.get('/selenium/messages');
+        this.messages = response.data.messages;
+      }catch(error){
+        this.$message.error('获取私信信息失败: ' + error.message);
       }
     },
     async replayStrangerMessages() {

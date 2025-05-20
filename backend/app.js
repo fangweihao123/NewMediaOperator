@@ -64,9 +64,19 @@ const VideoListInfo = sequelize.define('VideoListInfo', {
     }
 });
 
+const StrangerConversationInfo = sequelize.define('StrangerConversationInfo', {
+    user_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true
+    },
+    conversation: {
+        type: DataTypes.STRING(200)
+    }
+});
+
 // 创建 Douyin_UserService 实例
 const douyinUserService = new Douyin_UserService(AuthInfo);
-const seleniumService = new SeleniumService(VideoListInfo);
+const seleniumService = new SeleniumService(VideoListInfo, StrangerConversationInfo);
 
 // 初始化数据库
 (async () => {
@@ -153,6 +163,19 @@ app.get('/api/selenium/videos', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+
+// 获取私信信息
+app.get('/api/selenium/messages', async (req, res) => {
+    try {
+        const messages = await StrangerConversationInfo.findAll();
+        res.json({ status: 'success', messages });
+    } catch (error) {
+        console.error('获取私信信息失败:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 app.post('/api/selenium/replymessages', async(req, res) => {
     try {
