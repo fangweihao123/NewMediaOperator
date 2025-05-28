@@ -6,7 +6,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 const QRCode = require('qrcode');
 const winston = require('winston');
 const Douyin_UserService = require('./service/Douyin_UserService');
-const SeleniumService = require('./services/seleniumService');
+const SeleniumService = require('./service/seleniumService');
 require('dotenv').config();
 
 // 配置日志

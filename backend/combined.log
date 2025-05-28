@@ -636,3 +636,5 @@
 {"level":"info","message":"Database tables created successfully","timestamp":"2025-05-27T00:14:39.095Z"}
 {"level":"info","message":"Server is running on port 5001","timestamp":"2025-05-27T09:26:14.264Z"}
 {"level":"info","message":"Database tables created successfully","timestamp":"2025-05-27T09:26:14.271Z"}
+{"level":"info","message":"Server is running on port 5001","timestamp":"2025-05-27T10:41:42.940Z"}
+{"level":"info","message":"Database tables created successfully","timestamp":"2025-05-27T10:41:42.947Z"}
