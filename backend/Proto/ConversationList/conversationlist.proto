@@ -3,19 +3,25 @@ syntax = "proto3";
 package douyin;
 
 message Response {
-  int32 code = 1;  //对应值 2006
-  int32 status_code = 2;
-  int32 error_code = 3;
-  string message = 4;
-  int32 log_id = 5;
-  ConversationList conversationList = 6;
-  string request_id = 7;
-  int64 server_time = 10;
-  int64 client_time = 11;
-  int64 user_id = 13;
+  int32 cmd = 1;
+  int64 sequence_id = 2; 
+  int32 status_code = 3;
+  string error_desc = 4;
+  int32 inbox_type = 5;
+  ResponseBody body = 6;
+  string log_id = 7;
+  map<string, string> headers = 8;
+  int64 start_time_stamp = 9;
+  int64 request_arrived_time = 10;
+  int64 server_execution_end_time = 11;
+  string pdes_key = 110;
 }
 
-message ConversationList {
+message ResponseBody{
+ GetUserConversationListResponseBody conversationListBody = 2006; 
+}
+
+message GetUserConversationListResponseBody {
   repeated ConversationInfoV2 messagesList = 1;
   bool hasMore = 2;
   int64 next_Cursor = 3;

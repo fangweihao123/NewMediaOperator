@@ -1,17 +1,16 @@
 const { Builder, By, ServiceBuilder, until} = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const CDP = require('chrome-remote-interface');
-//const proto = require('../Proto/conversationmsg_pb');
-const proto = require('../Proto/conversationlist_pb');
 
 class SeleniumService {
-    constructor(videoListInfo, StrangerConversationInfo) {
+    constructor(videoListInfo, StrangerConversationInfo, protoParseService) {
         this.driver = null;
         this.adsPowerUrl = 'http://local.adspower.net:50325';
         this.debugPort = null;
         this.requestId = null;
         this.videoListInfo = videoListInfo;
         this.StrangerConversationInfo = StrangerConversationInfo;
+        this.protoParseService = protoParseService;
     }
 
     async bindHookToFetchRequest(){
@@ -114,79 +113,8 @@ class SeleniumService {
                         if(responseData.base64Encoded) {
                             // 解码base64数据
                             const decodedBuffer = Buffer.from(responseData.body, 'base64');
-                            const parsedMessage = this.handleConversationList(decodedBuffer);
+                            const parsedMessage = this.protoParseService.handleConversationList(decodedBuffer);
                             console.log('解析后的会话列表:', parsedMessage);
-                            
-                            // 处理具体的会话内容
-                            if (parsedMessage.messages) {
-                                parsedMessage.messages.forEach(msg => {
-                                    console.log('会话内容:', {
-                                        用户ID: msg.userId,
-                                        类型: msg.type,
-                                        状态: msg.status,
-                                        内容: msg.content,
-                                        SecUid: msg.secUid
-                                    });
-                                });
-                            }
-
-                            // 处理用户信息
-                            if (parsedMessage.userInfo) {
-                                console.log('用户信息:', {
-                                    用户ID: parsedMessage.userInfo.userId,
-                                    类型: parsedMessage.userInfo.type,
-                                    内容: parsedMessage.userInfo.content,
-                                    SecUid: parsedMessage.userInfo.secUid
-                                });
-                            }
-
-                            // 处理群组信息
-                            if (parsedMessage.groupInfo) {
-                                console.log('群组信息:', {
-                                    群组ID: parsedMessage.groupInfo.groupId,
-                                    创建时间: parsedMessage.groupInfo.createTime,
-                                    名称: parsedMessage.groupInfo.name,
-                                    描述: parsedMessage.groupInfo.description,
-                                    头像URL: parsedMessage.groupInfo.avatarUrl,
-                                    群主ID: parsedMessage.groupInfo.ownerId,
-                                    群主SecUid: parsedMessage.groupInfo.ownerSecUid
-                                });
-                            }
-
-                            // 处理群组设置
-                            if (parsedMessage.groupSettings) {
-                                console.log('群组设置:', {
-                                    群组ID: parsedMessage.groupSettings.groupId,
-                                    群组ID长整型: parsedMessage.groupSettings.groupIdLong,
-                                    类型: parsedMessage.groupSettings.type,
-                                    时间戳: parsedMessage.groupSettings.timestamp
-                                });
-                            }
-                            
-                            // 处理具体的消息内容
-                            if (parsedMessage.messages) {
-                                parsedMessage.messages.forEach(async msg => {
-                                    console.log('消息内容:', {
-                                        发送者: msg.senderId,
-                                        会话ID: msg.conversationId,
-                                        消息类型: msg.messageType,
-                                        内容: msg.content,
-                                        发送时间: new Date(msg.createTime).toLocaleString()
-                                    });
-                                    
-                                    // 检查数据库中是否已存在该会话
-                                    const existingConversation = await this.StrangerConversationInfo.findOne({
-                                        where: { user_id: msg.senderId }
-                                    });
-                                    if (!existingConversation) {
-                                        await this.StrangerConversationInfo.create({
-                                            user_id: msg.senderId,
-                                            conversation: msg.content
-                                        });
-                                        console.log('新会话已保存到数据库');
-                                    }
-                                });
-                            }
                         } else {
                             // 直接转换为十六进制
                             const jsonData = JSON.parse(responseData.body);

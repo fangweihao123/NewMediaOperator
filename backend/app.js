@@ -5,6 +5,7 @@ const cors = require('cors');
 const { Sequelize, DataTypes } = require('sequelize');
 const QRCode = require('qrcode');
 const winston = require('winston');
+const ProtoParse_Service = require('./service/protoParseService');
 const Douyin_UserService = require('./service/Douyin_UserService');
 const SeleniumService = require('./service/seleniumService');
 require('dotenv').config();
@@ -74,9 +75,10 @@ const StrangerConversationInfo = sequelize.define('StrangerConversationInfo', {
     }
 });
 
-// 创建 Douyin_UserService 实例
+// 创建服务实例
+const protoParseService = new ProtoParse_Service();
 const douyinUserService = new Douyin_UserService(AuthInfo);
-const seleniumService = new SeleniumService(VideoListInfo, StrangerConversationInfo);
+const seleniumService = new SeleniumService(VideoListInfo, StrangerConversationInfo, protoParseService);
 
 // 初始化数据库
 (async () => {
