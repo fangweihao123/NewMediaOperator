@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package douyin;
+
+import "MuteReadBadgeCountInfo.proto"
+
+message ConversationSettingInfo {
+  string conversation_id = 1;
+  int64 conversation_short_id = 2;
+  int32 conversation_type = 3;
+  int64 min_index = 4;
+  int64 read_index = 5;
+  int32 mute = 6;
+  int32 stick_on_top = 7;
+  int32 inbox_type = 8;
+  map<string, string> ext = 9;
+  int64 setting_version = 10;
+  int32 favorite = 11;
+  int64 set_top_time = 12;
+  int64 set_favorite_time = 13;
+  int64 read_index_v2 = 14;
+  int64 min_index_v2 = 15;
+  int32 read_badge_count = 16;
+  repeated MuteReadBadgeCountInfo mute_read_badge_count_infos = 17;
+  int32 push_status = 30;
+}

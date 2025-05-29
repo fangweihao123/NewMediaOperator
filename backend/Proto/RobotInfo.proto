@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package douyin;
+
+message RobotInfo {
+  int64 user_id = 1;
+  string sec_uid = 2;
+  map<string, string> ext = 99;
+}

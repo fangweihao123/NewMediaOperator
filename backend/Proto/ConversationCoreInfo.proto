@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package douyin;
+
+message ConversationCoreInfo {
+  string conversation_id = 1;
+  int64 conversation_short_id = 2;
+  int32 conversation_type = 3;
+  int64 info_version = 4;
+  string name = 5;
+  string desc = 6;
+  string icon = 7;
+  int32 inbox_type = 8;
+  string notice = 9;
+  map<string, string> ext = 11;
+  int64 owner = 12;
+  string sec_owner = 13;
+}

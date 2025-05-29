@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package douyin;
+
+import "Participant.proto"
+
+message ParticipantsPage {
+  repeated Participant participants = 1;
+  bool hasMore = 2;
+  int64 cursor = 3;
+}

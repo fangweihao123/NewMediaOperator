@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package douyin;
+
+message MuteBadgeCountInfo {
+  int32 message_type = 1;
+  int32 badge_count = 2;
+}

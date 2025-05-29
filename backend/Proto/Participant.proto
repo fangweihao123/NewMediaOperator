@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package douyin;
+
+message Participant {
+  int64 user_id = 1;
+  int64 sort_order = 2;
+  int32 role = 3;
+  string alias = 4;
+  string sec_uid = 5;
+  int32 blocked = 6;
+  int64 left_block_time = 7;
+  map<string, string> ext = 8;
+}

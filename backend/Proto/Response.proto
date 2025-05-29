@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package douyin;
+
+import "GetUserConversationListResponseBody.proto"
+
+message Response {
+  int32 cmd = 1;
+  int64 sequence_id = 2; 
+  int32 status_code = 3;
+  string error_desc = 4;
+  int32 inbox_type = 5;
+  ResponseBody body = 6;
+  string log_id = 7;
+  map<string, string> headers = 8;
+  int64 start_time_stamp = 9;
+  int64 request_arrived_time = 10;
+  int64 server_execution_end_time = 11;
+  string pdes_key = 110;
+}
+
+message ResponseBody{
+ GetUserConversationListResponseBody conversationListBody = 2006; 
+}

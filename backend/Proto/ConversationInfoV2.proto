@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package douyin;
+
+import "ParticipantsPage.proto"
+import "MuteBadgeCountInfo.proto"
+import "Participant.proto"
+import "ConversationCoreInfo.proto"
+import "ConversationSettingInfo.proto"
+import "RobotInfo.proto"
+
+message ConversationInfoV2 {
+  string conversation_id = 1;
+  int64 conversation_short_id = 2;
+  int32 conversation_type = 3;
+  string ticket = 4;
+  ParticipantsPage firstpageparticipant = 6;
+  int32 participantsCount = 7;
+  bool is_participant = 8;
+  int32 inbox_type = 9;
+  int32 badge_count = 10;
+  repeated MuteBadgeCountInfo muteBadgeInfo = 11;
+  Participant user_info = 20;
+  ConversationCoreInfo conversationCoreInfo = 50;
+  ConversationSettingInfo conversationSettingInfo = 51;
+  repeated RobotInfo robotInfos = 60;
+}
