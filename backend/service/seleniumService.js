@@ -93,6 +93,21 @@ class SeleniumService {
         }
     }
 
+    async uploadVideo(title, filepath) {
+        try {
+            if(this.driver){
+                await this.driver.get('https://creator.douyin.com/creator-micro/content/upload');
+                await this.driver.wait(until.urlIs('https://creator.douyin.com/creator-micro/content/upload'));
+                const fileInput = await this.driver.findElement(By.css("div[class^='container'] input"));
+                await fileInput.SendKeys(filepath);
+                
+            } 
+        } catch (error) {
+            console.error('上传视频失败:', error);
+            throw error;
+        }
+    }
+
 
     async replyMessages(message) {
         try {
@@ -107,13 +122,10 @@ class SeleniumService {
                     console.log(resourseType);
                     const responseData = await Fetch.getResponseBody({requestId});
                     if(request.headers.Accept.includes('protobuf')) {
-                        // 处理proto数据
-                        // TODO: 需要添加proto解析逻辑
-                        console.log('data ', responseData.body);
                         if(responseData.base64Encoded) {
                             // 解码base64数据
                             const decodedBuffer = Buffer.from(responseData.body, 'base64');
-                            const parsedMessage = this.protoParseService.handleConversationList(decodedBuffer);
+                            const parsedMessage = await this.protoParseService.handleConversationList(decodedBuffer);
                             console.log('解析后的会话列表:', parsedMessage);
                         } else {
                             // 直接转换为十六进制

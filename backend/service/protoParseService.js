@@ -56,19 +56,8 @@ class ProtoParse_Service{
             
             // 2. 转换为普通JavaScript对象
             const messageObj = response.toObject();
-            
-            // 3. 提取关键信息
-            const result = {
-                code: messageObj.code,
-                statusCode: messageObj.statusCode,
-                message: messageObj.message,
-                container: messageObj.container,
-                serverTime: messageObj.serverTime,
-                clientTime: messageObj.clientTime,
-                userId: messageObj.userId
-            };
 
-            return result;
+            return messageObj;
         } catch (error) {
             console.error('解析conversationlist消息失败:', error);
             throw error;

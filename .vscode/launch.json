@@ -7,12 +7,28 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Launch Program (Windows)",
             "skipFiles": [
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\backend\\app.js",
-            "runtimeArgs": ["--stack-size=16000"]
+            "runtimeArgs": ["--stack-size=16000"],
+            "windows": {
+                "program": "${workspaceFolder}\\backend\\app.js"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program (Mac)",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/backend/app.js",
+            "runtimeArgs": ["--stack-size=16000"],
+            "osx": {
+                "program": "${workspaceFolder}/backend/app.js"
+            }
         }
     ]
 }

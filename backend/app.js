@@ -8,6 +8,7 @@ const winston = require('winston');
 const ProtoParse_Service = require('./service/protoParseService');
 const Douyin_UserService = require('./service/Douyin_UserService');
 const SeleniumService = require('./service/seleniumService');
+const videoRouter = require('./router/videoRouter');
 require('dotenv').config();
 
 // 配置日志
@@ -23,10 +24,6 @@ const logger = winston.createLogger({
         new winston.transports.File({ filename: 'combined.log' })
     ]
 });
-
-const app = express();
-app.use(cors());
-app.use(express.json());
 
 // 抖音开放平台配置
 const DOUYIN_CLIENT_KEY = process.env.DOUYIN_CLIENT_KEY || 'aw48uuo6r8xm48xb';
@@ -79,6 +76,12 @@ const StrangerConversationInfo = sequelize.define('StrangerConversationInfo', {
 const protoParseService = new ProtoParse_Service();
 const douyinUserService = new Douyin_UserService(AuthInfo);
 const seleniumService = new SeleniumService(VideoListInfo, StrangerConversationInfo, protoParseService);
+
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use('/api/videos', videoRouter(seleniumService));
 
 // 初始化数据库
 (async () => {
