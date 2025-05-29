@@ -53,11 +53,11 @@ const AuthInfo = sequelize.define('AuthInfo', {
 });
 
 const VideoListInfo = sequelize.define('VideoListInfo', {
-    video_desc: {
+    title: {
         type: DataTypes.STRING(100),
         primaryKey: true
     },
-    video_share_url: {
+    description: {
         type: DataTypes.STRING(200)
     }
 });
@@ -77,12 +77,6 @@ const protoParseService = new ProtoParse_Service();
 const douyinUserService = new Douyin_UserService(AuthInfo);
 const seleniumService = new SeleniumService(VideoListInfo, StrangerConversationInfo, protoParseService);
 
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use('/api/videos', videoRouter(seleniumService));
-
 // 初始化数据库
 (async () => {
     try {
@@ -93,6 +87,12 @@ app.use('/api/videos', videoRouter(seleniumService));
         throw error;
     }
 })();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use('/api/videos', videoRouter(seleniumService));
+
 
 app.get('/api/userinfo', async (req, res) => {
     const userInfos = await douyinUserService.GetAuthUserInfo();
@@ -161,7 +161,7 @@ app.post('/api/selenium/connect', async (req, res) => {
 // 获取视频信息
 app.get('/api/selenium/videos', async (req, res) => {
     try {
-        const videos = await seleniumService.getVideoInfo();
+        const videos = await seleniumService.getVideoList();
         res.json({ status: 'success', videos });
     } catch (error) {
         console.error('获取视频信息失败:', error);

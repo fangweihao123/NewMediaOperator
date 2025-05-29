@@ -11,27 +11,15 @@
           </template>
           <div v-if="videos.length > 0">
             <el-table :data="videos" style="width: 100%">
-              <el-table-column prop="desc" label="描述" />
-              <el-table-column label="封面">
+              <el-table-column prop="title" label="标题" />
+              <el-table-column prop="description" label="描述" />
+              <el-table-column label="删除">
                 <template #default="scope">
-                  <a :href="scope.row.cover_url" target="_blank">
-                    <el-image 
-                      style="width: 100px; height: 100px"
-                      :src="scope.row.cover_url"
-                      :preview-src-list="[scope.row.cover_url]">
-                    </el-image>
-                  </a>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作">
-                <template #default="scope">
-                  <a :href="scope.row.video_url" target="_blank">
-                    <el-button 
-                      size="small" 
-                      type="primary">
-                      查看视频
-                    </el-button>
-                  </a>
+                  <el-button 
+                    size="small" 
+                    type="primary" @click="deleteVideo(scope.row.title)">
+                    删除视频
+                  </el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -50,6 +38,9 @@
           <el-form :model="uploadForm" label-width="100px">
             <el-form-item label="视频标题">
               <el-input v-model="uploadForm.title" placeholder="请输入视频标题"></el-input>
+            </el-form-item>
+            <el-form-item label="视频描述">
+              <el-input v-model="uploadForm.description" placeholder="请输入视频标题"></el-input>
             </el-form-item>
             <el-form-item label="视频路径">
               <el-input v-model="uploadForm.path" placeholder="请输入视频路径"></el-input>
@@ -84,6 +75,7 @@ export default {
       uploadDialogVisible: false,
       uploadForm: {
         title: '',
+        description: '',
         path: ''
       }
     }
@@ -92,6 +84,7 @@ export default {
     async getVideosFromAdsPower() {
       try {
         const response = await api.get('/selenium/videos');
+        this.videos = response.data.videos;
         this.$message.success('获取视频信息成功');
       } catch (error) {
         this.$message.error('获取视频信息失败: ' + error.message);
@@ -100,8 +93,10 @@ export default {
     showUploadDialog() {
       this.uploadDialogVisible = true;
       this.uploadForm = {
-        title: '',
-        path: '/Users/leon/Documents/游戏UP主/短视频揭秘第一期/双人成行短视频揭秘.mp4'
+        title: '游戏',
+        description: '揭秘',
+        path: 'C:\\Users\\13701\\Videos\\2025-04-06 18-01-17.mp4'
+        // path: '/Users/leon/Documents/游戏UP主/短视频揭秘第一期/双人成行短视频揭秘.mp4'
       };
     },
     handleFileChange(file) {
@@ -121,11 +116,22 @@ export default {
       try {
         await api.post('/videos/upload', {
           title: this.uploadForm.title,
+          description: this.uploadForm.description,
           video: this.uploadForm.path
         });
         this.uploadDialogVisible = false;
       } catch (error) {
         this.$message.error('视频上传失败: ' + error.message);
+      }
+    },
+    async deleteVideo(title) {
+      try {
+        await api.post('/videos/delete', {
+          title: title
+        });
+        this.$message.success('删除视频成功');
+      } catch (error) {
+        this.$message.error('删除视频失败: ' + error.message);
       }
     }
   },

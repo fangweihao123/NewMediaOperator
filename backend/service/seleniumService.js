@@ -11,6 +11,7 @@ class SeleniumService {
         this.videoListInfo = videoListInfo;
         this.StrangerConversationInfo = StrangerConversationInfo;
         this.protoParseService = protoParseService;
+        this.videoInfoRefreshHandler = null;
     }
 
     async bindHookToFetchRequest(){
@@ -19,16 +20,54 @@ class SeleniumService {
         const protocol = await CDP({ port: this.debugPort });
         const { Runtime, Network, Fetch } = protocol;
         Fetch.requestPaused(async ({requestId, request, frameId, resourseType}) => {
-            if (request.url.includes('https://www-hj.douyin.com/aweme/v1/web/aweme/post')) {
+            if (request.url.includes('https://creator.douyin.com/janus/douyin/creator/pc/work_list')) {
                 const responseData = await Fetch.getResponseBody({requestId});
                 let jsonData;
-                if(request.headers.Accept.includes('text')) {
+                if(responseData.base64Encoded) {
+                    const decodedBody = Buffer.from(responseData.body, 'base64').toString('utf-8');
+                    jsonData = JSON.parse(decodedBody);
+                    console.log('视频列表 base64 ', jsonData);
+                    if (jsonData.aweme_list) {
+                        for (const video of jsonData.aweme_list) {
+                            const videoData = {
+                                title: video.item_title,
+                                description: video.desc
+                            };
+                            // Ensure the VideoListInfo table exists
+                            await this.videoListInfo.sync();
+                            // Check if video already exists before inserting
+                            const existingVideo = await this.videoListInfo.findOne({
+                                where: {
+                                    title: videoData.title,
+                                    description: videoData.description
+                                }
+                            });
+
+                            if (!existingVideo) {
+                                await this.videoListInfo.create(videoData);
+                                console.log('Saved new video:', videoData.title);
+                            }
+                        }
+                    }
+                }else{
+                    jsonData = JSON.parse(responseData.body);
+                    console.log('normal ', jsonData);
+                }
+            }
+            if (request.url.includes('https://imapi.douyin.com/v1/conversation/list')) {
+                console.log(requestId);
+                console.log(request.headers);
+                console.log(resourseType);
+                const responseData = await Fetch.getResponseBody({requestId});
+                if(request.headers.Accept.includes('protobuf')) {
                     if(responseData.base64Encoded) {
-                        const decodedBody = Buffer.from(responseData.body, 'base64').toString('utf-8');
-                        jsonData = JSON.parse(decodedBody);
-                        console.log('base64 ', jsonData);
-                    }else{
-                        jsonData = JSON.parse(responseData.body);
+                        // 解码base64数据
+                        const decodedBuffer = Buffer.from(responseData.body, 'base64');
+                        const parsedMessage = await this.protoParseService.handleConversationList(decodedBuffer);
+                        console.log('聊天列表:', parsedMessage);
+                    } else {
+                        // 直接转换为十六进制
+                        const jsonData = JSON.parse(responseData.body);
                         console.log('normal ', jsonData);
                     }
                 }
@@ -75,6 +114,9 @@ class SeleniumService {
                 .build();
             this.debugPort = debugPort;
             this.driver.get('https://www.douyin.com/user/self?from_tab_name=main&showTab=post');
+            this.bindHookToFetchRequest();
+            //this.fetchVideoInfoTimer();
+            // Set up periodic video info fetching
             console.log('open douyin page');
             return true;
         } catch (error) {
@@ -82,28 +124,96 @@ class SeleniumService {
             throw error;
         }
     }
+    
+    async getVideoList() {
+        try {
+            const result = await this.videoListInfo.findAll();
+            return result;
+        } catch (error) {
+            console.error('获取视频列表失败:', error);
+            throw error;
+        }
+    }
 
     // 获取视频信息
-    async getVideoInfo() {
+    async fetchVideoInfoTimer() {
         try {
-
+            this.videoInfoRefreshHandler = setInterval(async () => {
+                if (this.driver) {
+                    await this.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
+                }
+                console.log('Successfully fetched video info');
+            }, 6000); // Fetch every 60 seconds
         } catch (error) {
             console.error('获取视频信息失败:', error);
             throw error;
         }
     }
 
-    async uploadVideo(title, filepath) {
+    async uploadVideo(title, description, filepath) {
         try {
             if(this.driver){
                 await this.driver.get('https://creator.douyin.com/creator-micro/content/upload');
-                await this.driver.wait(until.urlIs('https://creator.douyin.com/creator-micro/content/upload'));
+                // Wait for 2 seconds
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                //await this.driver.wait(until.urlIs('https://creator.douyin.com/creator-micro/content/upload'));
                 const fileInput = await this.driver.findElement(By.css("div[class^='container'] input"));
-                await fileInput.SendKeys(filepath);
+                await fileInput.sendKeys(filepath);
                 
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                // Wait for title input to be visible and interactable
+                const titleInput = await this.driver.wait(
+                    until.elementLocated(By.xpath("//*[@id='DCPF']/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/input[1]")),
+                    10000
+                );
+                await titleInput.clear();
+                await titleInput.sendKeys(title);
+                const descriptionInput = await this.driver.wait(
+                    until.elementLocated(By.xpath("//*[@id='DCPF']/DIV[1]/DIV[1]/DIV[1]/DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[1]/DIV[1]/DIV[2]/DIV[1]")),
+                    10000
+                );
+                await descriptionInput.clear();
+                await descriptionInput.sendKeys(description);
+                await new Promise(resolve => setTimeout(resolve, 30000));
+                // Click the publish button
+                const publishButton = await this.driver.wait(
+                    until.elementLocated(By.xpath("//*[@id='DCPF']/div[1]/div[1]/div[1]/div[5]/div[1]/div[1]/div[1]/div[1]/div[1]/button[1]")),
+                    10000
+                );
+                await publishButton.click();
             } 
         } catch (error) {
             console.error('上传视频失败:', error);
+            throw error;
+        }
+    }
+
+    async deleteVideo(title) {
+        try {
+            if (this.driver) {
+                await this.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
+                // Wait for page to load
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                // Find all video cards
+                const videoCards = await this.driver.findElements(By.xpath("//*[@id='root']/DIV[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV"));
+
+                // Loop through cards to find matching title
+                for (const card of videoCards) {
+                    const titleElement = await card.findElement(By.xpath("DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[1]"));
+                    const cardTitle = await titleElement.getText();
+                    
+                    if (cardTitle === title) {
+                        // Find and click delete button within this card
+                        const deleteButton = await card.findElement(By.xpath("DIV[2]/DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[2]/DIV[1]/DIV[4]/SPAN[1]"));
+                        await deleteButton.click();
+                        // Wait for confirmation dialog and click confirm
+                        break;
+                    }
+            }
+        }
+        } catch (error) {
+            console.error('删除视频失败:', error);
             throw error;
         }
     }
@@ -114,31 +224,6 @@ class SeleniumService {
             const cdpConnection = await this.driver.createCDPConnection('page');
             await this.driver.onLogEvent(cdpConnection);
             const protocol = await CDP({ port: this.debugPort });
-            const { Runtime, Network, Fetch } = protocol;
-            Fetch.requestPaused(async ({requestId, request, frameId, resourseType}) => {
-                if (request.url.includes('https://imapi.douyin.com/v1/conversation/list')) {
-                    console.log(requestId);
-                    console.log(request.headers);
-                    console.log(resourseType);
-                    const responseData = await Fetch.getResponseBody({requestId});
-                    if(request.headers.Accept.includes('protobuf')) {
-                        if(responseData.base64Encoded) {
-                            // 解码base64数据
-                            const decodedBuffer = Buffer.from(responseData.body, 'base64');
-                            const parsedMessage = await this.protoParseService.handleConversationList(decodedBuffer);
-                            console.log('解析后的会话列表:', parsedMessage);
-                        } else {
-                            // 直接转换为十六进制
-                            const jsonData = JSON.parse(responseData.body);
-                            console.log('normal ', jsonData);
-                        }
-                    }
-                }
-                Fetch.continueRequest({requestId});
-            });
-            Fetch.enable({
-                patterns: [{requestStage:'Response'}]
-            });
             return;
         }catch(error) {
             console.error('获取私信失败', error);
