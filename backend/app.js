@@ -8,6 +8,7 @@ const winston = require('winston');
 const ProtoParse_Service = require('./service/protoParseService');
 const Douyin_UserService = require('./service/Douyin_UserService');
 const SeleniumService = require('./service/seleniumService');
+const WebSocketService = require('./service/WebSocketService');
 const videoRouter = require('./router/videoRouter');
 require('dotenv').config();
 
@@ -76,6 +77,7 @@ const StrangerConversationInfo = sequelize.define('StrangerConversationInfo', {
 const protoParseService = new ProtoParse_Service();
 const douyinUserService = new Douyin_UserService(AuthInfo);
 const seleniumService = new SeleniumService(VideoListInfo, StrangerConversationInfo, protoParseService);
+const webSocketService = new WebSocketService();
 
 // 初始化数据库
 (async () => {
@@ -173,7 +175,8 @@ app.get('/api/selenium/videos', async (req, res) => {
 // 获取私信信息
 app.get('/api/selenium/messages', async (req, res) => {
     try {
-        const messages = await StrangerConversationInfo.findAll();
+        const messages = await webSocketService.requestMessagePerUser(1);
+        //const messages = await StrangerConversationInfo.findAll();
         res.json({ status: 'success', messages });
     } catch (error) {
         console.error('获取私信信息失败:', error);
@@ -209,4 +212,5 @@ const PORT = process.env.PORT || 5001;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Starting Express application...`);
     logger.info(`Server is running on port ${PORT}`);
+    webSocketService.connect();
 }); 

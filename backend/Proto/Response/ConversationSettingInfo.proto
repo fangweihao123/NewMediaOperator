@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package douyin;
 
-import "MuteReadBadgeCountInfo.proto"
+import "MuteReadBadgeCountInfo.proto";
 
 message ConversationSettingInfo {
   string conversation_id = 1;

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package douyin;
+
+import "MessagePerUserRequestBody.proto";
+import "CreateConversationV2RequestBody.proto";
+
+message RequestBody {
+  MessagePerUserRequestBody messagePerUser = 200;
+  CreateConversationV2RequestBody CreateConversationV2RequestBody = 609;
+}

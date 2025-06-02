@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package douyin;
 
-import "Participant.proto"
+import "Participant.proto";
 
 message ParticipantsPage {
   repeated Participant participants = 1;

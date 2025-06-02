@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package douyin;
 
-import "ParticipantsPage.proto"
-import "MuteBadgeCountInfo.proto"
-import "Participant.proto"
-import "ConversationCoreInfo.proto"
-import "ConversationSettingInfo.proto"
-import "RobotInfo.proto"
+import "ParticipantsPage.proto";
+import "MuteBadgeCountInfo.proto";
+import "Participant.proto";
+import "ConversationCoreInfo.proto";
+import "ConversationSettingInfo.proto";
+import "RobotInfo.proto";
 
 message ConversationInfoV2 {
   string conversation_id = 1;

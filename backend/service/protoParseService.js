@@ -1,4 +1,4 @@
-const proto = require('../Proto/Response_pb');
+const proto = require('../Proto/Response/Response_pb');
 class ProtoParse_Service{
     constructor(){
 

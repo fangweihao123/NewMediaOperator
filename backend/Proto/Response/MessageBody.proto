@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package douyin;
+
+message MessageBody {
+    string conversation_id = 1;
+    int32 conversation_type = 2;
+    int64 server_message_id = 3;
+    int64 index_in_conversation = 4;
+    int64 conversation_short_id = 5;
+    int32 message_type = 6;
+    int64 sender = 7;
+    string content = 8;
+    map<string, string> ext = 9;
+    int64 create_time = 10;
+    int64 version = 11;
+    int32 status = 12;
+    int64 order_in_conversation = 13;
+    string sec_sender = 14;
+    //map<string, PropertyItemList> property_list = 15;
+    int64 index_in_conversation_v2 = 17;
+    //ReferenceInfo reference_info = 18;
+}

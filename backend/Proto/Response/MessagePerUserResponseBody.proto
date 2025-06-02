@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package douyin;
+
+import "MessageBody.proto";
+
+message MessagePerUserResponseBody {
+  repeated MessageBody messages = 1;
+  int64 next_cursor = 2;
+  bool has_more = 3;
+  int64 next_interval = 4;
+  int64 next_conversation_version = 5;
+  // repeated ConversationBadgeCountInfo conversation_badge_count = 6;
+  int64 next_cmd_index = 7;
+  repeated int64 hasmore_message_conv_list = 8;
+}

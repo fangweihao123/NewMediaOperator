@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package douyin;
 
-import "ConversationInfoV2.proto"
+import "ConversationInfoV2.proto";
 
 message GetUserConversationListResponseBody {
   repeated ConversationInfoV2 messagesList = 1;

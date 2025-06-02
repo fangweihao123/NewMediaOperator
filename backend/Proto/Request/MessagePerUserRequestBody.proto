@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package douyin;
+
+message MessagePerUserRequestBody {
+  int64 cursor = 1;
+  int32 limit = 2;
+}

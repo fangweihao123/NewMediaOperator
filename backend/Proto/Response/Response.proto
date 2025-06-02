@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package douyin;
+
+import "MessagePerUserResponseBody.proto";
+import "GetUserConversationListResponseBody.proto";
+import "CreateConversationV2ResponseBody.proto";
+
+message Response {
+  int32 cmd = 1;
+  int64 sequence_id = 2; 
+  int32 status_code = 3;
+  string error_desc = 4;
+  int32 inbox_type = 5;
+  ResponseBody body = 6;
+  string log_id = 7;
+  map<string, string> headers = 8;
+  int64 start_time_stamp = 9;
+  int64 request_arrived_time = 10;
+  int64 server_execution_end_time = 11;
+  string pdes_key = 110;
+}
+
+message ResponseBody {
+  SendMessageResponseBody send_message_body = 100;
+  MessagePerUserResponseBody messages_per_user_body = 200;
+  MessagesPerUserInitV2ResponseBody messages_per_user_init_v2_body = 203;
+  GetMessageByIdResponseBody get_message_by_id_body = 211;
+  MessagesInConversationResponseBody messages_in_conversation_body = 301;
+  GetMessagesCheckInfoInConversationResponseBody get_messages_checkinfo_in_conversation_body = 302;
+  NewMessageNotify has_new_message_notify = 500;
+  NewP2PMessageNotify has_new_p2p_message_notify = 504;
+  GetConversationsCheckInfoResponseBody get_conversations_checkinfo_body = 615;
+  CreateConversationV2ResponseBody create_conversation_v2_body = 609;
+  GetConversationInfoListV2ResponseBody get_conversation_info_list_v2_body = 610;
+  ConversationParticipantsListResponseBody conversation_participants_body = 605;
+  ConversationAddParticipantsResponseBody conversation_add_participants_body = 650;
+  MgetConversationParticipantsResponseBody mget_conversation_participants_body = 654;
+  ModifyMessagePropertyResponseBody modify_message_property_body = 705;
+  GetConversationCoreInfoResponseBody get_conversation_core_info_body = 901;
+  SetConversationSettingInfoResponseBody set_conversation_setting_info_body = 921;
+  UpsertConversationSettingExtInfoResponseBody upsert_conversation_setting_ext_info_body = 922;
+  GetStrangerConversationListResponseBody get_stranger_conversation_body = 1000;
+  GetStrangerMessagesResponseBody get_stranger_messages_body = 1001;
+  GetConversationParticipantsReadIndexV3ResponseBody participants_read_index_body = 2000;
+  GetConversationParticipantsMinIndexV3ResponseBody participants_min_index_body = 2001;
+  BatchGetConversationParticipantsReadIndexResponseBody batch_get_conversation_participants_readindex = 2038;
+  GetTicketResponseBody get_ticket_body = 2005;
+  GetUserConversationListResponseBody get_conversation_list_body = 2006;
+  BroadcastRecvMessageResponseBody broadcast_recv_message_body = 2008;
+  GetConfigsResponseBody get_configs_body = 2017;
+  UnReadCountReportResponseBody unread_count_report_body = 2018;
+  MessageByInitResponseBody message_by_init = 2043;
+  GetUserMessageResponseBody get_user_message = 2048;
+}
+
+  message SendMessageResponseBody  { }
+  message MessagesPerUserInitV2ResponseBody { }
+  message GetMessageByIdResponseBody { }
+  message MessagesInConversationResponseBody { }
+  message GetMessagesCheckInfoInConversationResponseBody { }
+  message NewMessageNotify { }
+  message NewP2PMessageNotify { }
+  message GetConversationsCheckInfoResponseBody { }
+  message GetConversationInfoListV2ResponseBody { }
+  message ConversationParticipantsListResponseBody { }
+  message ConversationAddParticipantsResponseBody { }
+  message MgetConversationParticipantsResponseBody { }
+  message ModifyMessagePropertyResponseBody { }
+  message GetConversationCoreInfoResponseBody { }
+  message SetConversationSettingInfoResponseBody { }
+  message UpsertConversationSettingExtInfoResponseBody { }
+  message GetStrangerConversationListResponseBody { }
+  message GetStrangerMessagesResponseBody { }
+  message GetConversationParticipantsReadIndexV3ResponseBody { }
+  message GetConversationParticipantsMinIndexV3ResponseBody { }
+  message BatchGetConversationParticipantsReadIndexResponseBody { }
+  message GetTicketResponseBody { }
+  message BroadcastRecvMessageResponseBody { }
+  message GetConfigsResponseBody  { }
+  message UnReadCountReportResponseBody { }
+  message MessageByInitResponseBody { }
+  message GetUserMessageResponseBody  { }

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package douyin;
+
+import "ConversationInfoV2.proto";
+
+message CreateConversationV2ResponseBody {
+  ConversationInfoV2 conversation = 1;
+  int64 check_code = 2;
+  string check_message = 3;
+  string extra_info = 4;
+  int32 status = 5;
+}

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package douyin;
+
+message CreateConversationV2RequestBody {
+  int32 conversation_type = 1;
+  repeated int64 participants = 2;
+  bool persistent = 3;
+  string idempotent_id = 4;
+  string name = 6;
+  string avatar_url = 7;
+  string description = 8;
+  map<string, string> biz_ext = 11;
+}

@@ -55,9 +55,6 @@ class SeleniumService {
                 }
             }
             if (request.url.includes('https://imapi.douyin.com/v1/conversation/list')) {
-                console.log(requestId);
-                console.log(request.headers);
-                console.log(resourseType);
                 const responseData = await Fetch.getResponseBody({requestId});
                 if(request.headers.Accept.includes('protobuf')) {
                     if(responseData.base64Encoded) {
