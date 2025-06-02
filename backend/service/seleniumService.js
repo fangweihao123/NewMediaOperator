@@ -3,13 +3,13 @@ const chrome = require('selenium-webdriver/chrome');
 const CDP = require('chrome-remote-interface');
 
 class SeleniumService {
-    constructor(videoListInfo, StrangerConversationInfo, protoParseService) {
+    constructor(videoListInfo, ConversationInfo, protoParseService) {
         this.driver = null;
         this.adsPowerUrl = 'http://local.adspower.net:50325';
         this.debugPort = null;
         this.requestId = null;
         this.videoListInfo = videoListInfo;
-        this.StrangerConversationInfo = StrangerConversationInfo;
+        this.ConversationInfoDB = ConversationInfo;
         this.protoParseService = protoParseService;
         this.videoInfoRefreshHandler = null;
     }
@@ -60,8 +60,67 @@ class SeleniumService {
                     if(responseData.base64Encoded) {
                         // 解码base64数据
                         const decodedBuffer = Buffer.from(responseData.body, 'base64');
-                        const parsedMessage = await this.protoParseService.handleConversationList(decodedBuffer);
+                        const parsedMessage = await this.protoParseService.parseProtobufMessage(decodedBuffer);
                         console.log('聊天列表:', parsedMessage);
+                    } else {
+                        // 直接转换为十六进制
+                        const jsonData = JSON.parse(responseData.body);
+                        console.log('normal ', jsonData);
+                    }
+                }
+            }
+            if (request.url.includes('https://imapi.douyin.com/v1/message/get_message_by_init')) {
+                const responseData = await Fetch.getResponseBody({requestId});
+                if(request.headers.Accept.includes('protobuf')) {
+                    if(responseData.base64Encoded) {
+                        // 解码base64数据
+                        const decodedBuffer = Buffer.from(responseData.body, 'base64');
+                        const parsedMessage = await this.protoParseService.parseProtobufMessage(decodedBuffer);
+                        console.log('初始聊天列表:', parsedMessage);
+                        // 获取message_by_init对象
+                        const messageLists = parsedMessage.body.messageByInit.messagesList;
+                        for (const message of messageLists) {
+                            const conversationInfo = message.conversations;
+                            const messageListContent = message.messagesList;
+                            let cnt = 1;
+                            let conversation = '';
+                            for (let i = messageListContent.length - 1; i >= 0; i--) {
+                                try {
+                                    const messageContent = JSON.parse(messageListContent[i].content);
+                                    if (messageContent.aweType === 700) {
+                                        if(cnt <= 3 && messageContent.text){
+                                            conversation += messageContent.text;
+                                            conversation += '\n';
+                                            cnt++;
+                                        }
+                                    }
+                                } catch (error) {
+                                    // If content is not valid JSON, skip it
+                                    continue;
+                                }
+                            }
+                            // 保存会话信息到数据库
+                            try {
+                                const existingConversation = await this.ConversationInfoDB.findOne({
+                                    where: {
+                                        conversation_id: conversationInfo.conversationId
+                                    }
+                                });
+
+                                if (existingConversation) {
+                                    existingConversation.conversation = conversation;
+                                    await existingConversation.save();
+                                } else {
+                                    const conversationData = {
+                                        conversation_id: conversationInfo.conversationId,
+                                        conversation: conversation
+                                    };
+                                    await this.ConversationInfoDB.create(conversationData);
+                                }
+                            } catch (error) {
+                                console.error('保存会话信息失败:', error);
+                            }
+                        }
                     } else {
                         // 直接转换为十六进制
                         const jsonData = JSON.parse(responseData.body);

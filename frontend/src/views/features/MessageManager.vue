@@ -28,7 +28,12 @@
           </template> 
             <div v-if="messages.length > 0">
               <el-table :data="messages" style="width: 100%">
-              <el-table-column prop="text" label="信息" />
+              <el-table-column prop="conversation_id" label="ID" />
+              <el-table-column prop="conversation" label="信息">
+                <template #default="scope">
+                  <span v-if="scope.row.conversation && scope.row.conversation.length > 0" style="white-space: pre-line">{{ scope.row.conversation }}</span>
+                </template>
+              </el-table-column>
               
               </el-table>
             </div>

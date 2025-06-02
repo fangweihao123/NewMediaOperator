@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package douyin;
+
+import "ConversationMessages.proto";
+
+message MessageByInitResponseBody {
+  repeated ConversationMessage messages = 1;
+  bool has_more = 2;
+  int64 next_init_version = 3;
+  int64 version = 4;
+  int64 user_cursor = 5;
+  int64 cmd_index = 6;
+  int64 readconv_version = 7;
+}

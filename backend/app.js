@@ -63,9 +63,9 @@ const VideoListInfo = sequelize.define('VideoListInfo', {
     }
 });
 
-const StrangerConversationInfo = sequelize.define('StrangerConversationInfo', {
-    user_id: {
-        type: DataTypes.INTEGER,
+const ConversationInfo = sequelize.define('ConversationInfo', {
+    conversation_id: {
+        type: DataTypes.STRING(200),
         primaryKey: true
     },
     conversation: {
@@ -76,7 +76,7 @@ const StrangerConversationInfo = sequelize.define('StrangerConversationInfo', {
 // 创建服务实例
 const protoParseService = new ProtoParse_Service();
 const douyinUserService = new Douyin_UserService(AuthInfo);
-const seleniumService = new SeleniumService(VideoListInfo, StrangerConversationInfo, protoParseService);
+const seleniumService = new SeleniumService(VideoListInfo, ConversationInfo, protoParseService);
 const webSocketService = new WebSocketService();
 
 // 初始化数据库
@@ -175,8 +175,7 @@ app.get('/api/selenium/videos', async (req, res) => {
 // 获取私信信息
 app.get('/api/selenium/messages', async (req, res) => {
     try {
-        const messages = await webSocketService.requestMessagePerUser(1);
-        //const messages = await StrangerConversationInfo.findAll();
+        const messages = await ConversationInfo.findAll();
         res.json({ status: 'success', messages });
     } catch (error) {
         console.error('获取私信信息失败:', error);

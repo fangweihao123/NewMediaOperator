@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const { Request } = require('../Proto/Request/Request_pb');
 const { RequestBody } = require('../Proto/Request/RequestBody_pb');
 const { MessagePerUserRequestBody } = require('../Proto/Request/MessagePerUserRequestBody_pb');
+const { MessageByInit } = require('../Proto/Request/MessageByInit_pb');
 const { Response } = require('../Proto/Response/Response_pb');
 const { MessagePerUserResponseBody } = require('../Proto/Response/MessagePerUserResponseBody_pb');
 
@@ -10,7 +11,7 @@ class WebSocketService {
         this.ws = null;
         this.isConnected = false;
         this.heartbeatInterval = null;
-        /*const baseUrl = 'wss://frontier-im.douyin.com/ws/v2';
+        const baseUrl = 'wss://frontier-im.douyin.com/ws/v2';
         this.devicePlatform = 'web';
         this.versionCode = 'fws_1.0.0';
         this.accessKey = '2dd9a1c26fc280f9be16340822f7fd57';
@@ -33,9 +34,9 @@ class WebSocketService {
             `xs_ack=${this.xsack}&` +
             `xa_ack=${this.xaack}&` +
             `xs_qos=${this.xsqos}&` +
-            `qos_sdk_version=${this.qosSdkVersion}`;*/
+            `qos_sdk_version=${this.qosSdkVersion}`;
 
-        const baseUrl = 'wss://frontier-im.douyin.com/ws/v2';
+        /*const baseUrl = 'wss://frontier-im.douyin.com/ws/v2';
         this.versionCode = 'fws_1.0.0';
         this.token = 'hash.mqeJs91M3pCNE7siTuISPidtVo8hxvO6zdYlWlTZXHQ=';
         this.accessKey = '2dd9a1c26fc280f9be16340822f7fd57';
@@ -50,7 +51,6 @@ class WebSocketService {
 
         this.wsUrl = `${baseUrl}?` +
             `token=${this.token}&` +
-            `access_key=${this.accessKey}&` +
             `aid=${this.aid}&` +
             `fpid=${this.fpid}&` +
             `device_id=${this.deviceId}&` +
@@ -59,7 +59,7 @@ class WebSocketService {
             `xs_ack=${this.xsack}&` +
             `xa_ack=${this.xaack}&` +
             `xs_qos=${this.xsqos}&` +
-            `qos_sdk_version=${this.qosSdkVersion}`;
+            `qos_sdk_version=${this.qosSdkVersion}`;*/
         this.messageHandlers = new Set();
     }
 
@@ -76,8 +76,8 @@ class WebSocketService {
             this.ws.on('message', (data) => {
                 try {
                     console.log('收到消息:', data.toString());
-                    const decodedBuffer = data;
-                    this.handleProtobufMessage(decodedBuffer);
+                    const decodedBuffer = Buffer.from(data.toString(), 'base64');
+                    // this.handleProtobufMessage(decodedBuffer);
                 } catch (error) {
                     console.error('消息解析错误:', error);
                 }
@@ -107,24 +107,56 @@ class WebSocketService {
             const messagePerUserBody = new MessagePerUserRequestBody();
             messagePerUserBody.setCursor(cursor);
             messagePerUserBody.setLimit(limit);
+
+            const messageByInit = new MessageByInit();
+            messageByInit.setPage(0);
             
             // 2. 创建 RequestBody
             const requestBody = new RequestBody();
-            requestBody.setMessageperuser(messagePerUserBody);
+            requestBody.setMessageByInit(messageByInit);
             
             // 3. 创建主 Request
             const request = new Request();
-            request.setAccess('web_sdk');
-            request.setAuthType(1);
-            request.setBuildNumber('8aa2dcb:Detached: 8aa2dcb88b41538885168e4afbbd2b6bac8aefb2');
-            request.setCmd(200); // MessagePerUser 命令
-            request.setDeviceId(this.deviceId);
-            request.setDevicePlatform(this.devicePlatform);
+            request.setCmd(2043); // MessagePerUser 命令
             request.setSequenceId(10056);
-            request.setInboxType(1);
-            request.setRefer(3);
             request.setSdkVersion('1.1.3');
+            request.setToken(this.token);
+            request.setRefer(3);
+            request.setInboxType(1);
+            request.setBuildNumber('8aa2dcb:Detached: 8aa2dcb88b41538885168e4afbbd2b6bac8aefb2');
             request.setBody(requestBody);
+            //request.setDeviceId(this.deviceId);
+            request.setDeviceId('0');
+            const headers = {
+                'app_name': 'douyin_pc',
+                'browser_language': 'zh-CN', 
+                'browser_name': 'Mozilla',
+                'browser_online': 'true',
+                'browser_platform': 'Win32',
+                'browser_version': '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+                'cookie_enabled': 'true',
+                'deviceId': '0',
+                'fp': 'verify_m91gimia_NSbK3b9f_kZTm_4TFo_BiCf_MS4EyBxL3WcI',
+                'priority_region': 'cn',
+                'referer': '',
+                'screen_height': '1440',
+                'screen_width': '2560',
+                'session_aid': '6383',
+                'session_did': '0',
+                'timezone_name': 'Asia/Hong_Kong',
+                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+                'webid': '7489095018427860518'
+            };
+            const headersMap = request.getHeadersMap();
+            Object.entries(headers).forEach(([key, value]) => {
+                headersMap.set(key, value);
+            });
+            request.setDevicePlatform("douyin_pc");
+
+            request.setVersionCode(this.versionCode);
+            request.setAuthType(4);
+            request.setAccess('web_sdk');
+            
             // 可以尝试为base64编码
             // 4. 序列化为二进制数据
             // Convert request to base64

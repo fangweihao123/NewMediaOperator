@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package douyin;
+
+message MessageByInit {
+  int64 version = 1;
+  int32 page = 2;
+  int32 conv_limit = 3;
+  int32 msg_limit = 4;
+}

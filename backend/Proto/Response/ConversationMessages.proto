@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package douyin;
+
+import "MessageBody.proto";
+import "ConversationInfoV2.proto";
+
+message ConversationMessage {
+  ConversationInfoV2 conversations = 1;
+  repeated MessageBody messages = 2;
+}

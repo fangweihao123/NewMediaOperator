@@ -5,6 +5,7 @@ package douyin;
 import "MessagePerUserResponseBody.proto";
 import "GetUserConversationListResponseBody.proto";
 import "CreateConversationV2ResponseBody.proto";
+import "MessageByInitResponseBody.proto";
 
 message Response {
   int32 cmd = 1;
@@ -79,5 +80,4 @@ message ResponseBody {
   message BroadcastRecvMessageResponseBody { }
   message GetConfigsResponseBody  { }
   message UnReadCountReportResponseBody { }
-  message MessageByInitResponseBody { }
   message GetUserMessageResponseBody  { }
