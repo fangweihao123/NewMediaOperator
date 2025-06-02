@@ -54,21 +54,6 @@ class SeleniumService {
                     console.log('normal ', jsonData);
                 }
             }
-            if (request.url.includes('https://imapi.douyin.com/v1/conversation/list')) {
-                const responseData = await Fetch.getResponseBody({requestId});
-                if(request.headers.Accept.includes('protobuf')) {
-                    if(responseData.base64Encoded) {
-                        // 解码base64数据
-                        const decodedBuffer = Buffer.from(responseData.body, 'base64');
-                        const parsedMessage = await this.protoParseService.parseProtobufMessage(decodedBuffer);
-                        console.log('聊天列表:', parsedMessage);
-                    } else {
-                        // 直接转换为十六进制
-                        const jsonData = JSON.parse(responseData.body);
-                        console.log('normal ', jsonData);
-                    }
-                }
-            }
             if (request.url.includes('https://imapi.douyin.com/v1/message/get_message_by_init')) {
                 const responseData = await Fetch.getResponseBody({requestId});
                 if(request.headers.Accept.includes('protobuf')) {
@@ -171,7 +156,7 @@ class SeleniumService {
             this.debugPort = debugPort;
             this.driver.get('https://www.douyin.com/user/self?from_tab_name=main&showTab=post');
             this.bindHookToFetchRequest();
-            //this.fetchVideoInfoTimer();
+            this.fetchVideoInfoTimer();
             // Set up periodic video info fetching
             console.log('open douyin page');
             return true;
@@ -199,7 +184,16 @@ class SeleniumService {
                     await this.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
                 }
                 console.log('Successfully fetched video info');
-            }, 6000); // Fetch every 60 seconds
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                await this.driver.get('https://www.douyin.com/user/self?from_tab_name=main');
+                // Find and click the element using the specified xpath
+                const element = await this.driver.wait(
+                    until.elementLocated(By.xpath('/html/body/div[2]/div[1]/div[4]/div[1]/div[1]/header/div/div/div[2]/div/pace-island/div/ul[2]/div/li/div/div/div[1]/p')),
+                    10000
+                );
+                await element.click();
+            }, 20000); // Fetch every 60 seconds
+
         } catch (error) {
             console.error('获取视频信息失败:', error);
             throw error;
