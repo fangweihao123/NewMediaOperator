@@ -51,9 +51,17 @@ export default {
       if(this.accountList.length > 0) {
         this.isBound = true;
         this.accountInfo = this.accountList[0];
-        console.log('test');
-        console.log(this.accountInfo);
+        for (const account of this.accountList) {
+          try {
+            await api.post('/adsPower/connect', {
+              profileId: account.user_id
+            });
+          } catch (error) {
+            console.error(`Failed to connect account ${account.user_id}:`, error);
+          }
+        }
       }
+      
     },
     async RedirectTODouyinAuthPage() {
       try {

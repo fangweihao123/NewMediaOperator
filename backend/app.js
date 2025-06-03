@@ -1,17 +1,12 @@
 const { default: Client, OauthAccessTokenRequest } = require('@open-dy/open_api_sdk');
-const { default: CredentialClient } = require('@open-dy/open_api_credential');
 const express = require('express');
 const cors = require('cors');
-const { Sequelize, DataTypes } = require('sequelize');
-const QRCode = require('qrcode');
 const winston = require('winston');
-const ProtoParse_Service = require('./service/protoParseService');
 const Douyin_UserService = require('./service/Douyin_UserService');
-const SeleniumService = require('./service/seleniumService');
 const WebSocketService = require('./service/WebSocketService');
-const AdsPowerService = require('./service/AdsPowerService');
 const videoRouter = require('./router/videoRouter');
 const AdsPowerRouter = require('./router/AdsPowerRouter');
+const dbManager = require('./Utils/DataBaseManager');
 require('dotenv').config();
 
 // 配置日志
@@ -34,52 +29,8 @@ const DOUYIN_CLIENT_SECRET = process.env.DOUYIN_CLIENT_SECRET || '7ef22bcf824200
 const DOUYIN_REDIRECT_URI = 'https://418e-116-148-240-41.ngrok-free.app/auth-success';
 const DOUYIN_SCOPES = 'trial.whitelist,user_info,video.list.bind';
 
-// 数据库配置
-const sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: 'douyin.db',
-    logging: false
-});
-
-// 定义 AuthInfo 模型
-const AuthInfo = sequelize.define('AuthInfo', {
-    open_id: {
-        type: DataTypes.STRING(100),
-        primaryKey: true
-    },
-    code: {
-        type: DataTypes.STRING(100)
-    },
-    accessToken: {
-        type: DataTypes.STRING(100)
-    },
-});
-
-const VideoListInfo = sequelize.define('VideoListInfo', {
-    title: {
-        type: DataTypes.STRING(100),
-        primaryKey: true
-    },
-    description: {
-        type: DataTypes.STRING(200)
-    }
-});
-
-const ConversationInfo = sequelize.define('ConversationInfo', {
-    conversation_id: {
-        type: DataTypes.STRING(200),
-        primaryKey: true
-    },
-    conversation: {
-        type: DataTypes.STRING(200)
-    }
-});
-
 // 创建服务实例
-const protoParseService = new ProtoParse_Service();
 const douyinUserService = new Douyin_UserService(AuthInfo);
-const adsPowerService = new AdsPowerService();
-const seleniumService = new SeleniumService(VideoListInfo, ConversationInfo, protoParseService, adsPowerService);
 const webSocketService = new WebSocketService();
 
 // 初始化数据库
@@ -156,7 +107,10 @@ app.post('/api/auth/callback', async (req, res) => {
 // 获取视频信息
 app.get('/api/selenium/videos', async (req, res) => {
     try {
-        const videos = await seleniumService.getVideoList();
+        const { profile_id } = req.body;
+        const models =  await dbManager.getModels();
+        const videoModel = models.VideoInfo;
+        const videos = await videoModel.findAll();
         res.json({ status: 'success', videos });
     } catch (error) {
         console.error('获取视频信息失败:', error);

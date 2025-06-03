@@ -85,7 +85,6 @@ export default {
       try {
         const response = await api.get('/selenium/videos');
         this.videos = response.data.videos;
-        this.$message.success('获取视频信息成功');
       } catch (error) {
         this.$message.error('获取视频信息失败: ' + error.message);
       }
