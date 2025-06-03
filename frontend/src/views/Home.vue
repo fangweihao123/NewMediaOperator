@@ -7,14 +7,14 @@
         class="el-menu-vertical"
         @select="handleSelect"
         >
-          <el-menu-item index="account">
-            <span>账号管理</span>
-          </el-menu-item>
           <el-menu-item index="video">
             <span>视频管理</span>
           </el-menu-item>
           <el-menu-item index="message">
             <span>私信管理</span>
+          </el-menu-item>
+          <el-menu-item index="account">
+            <span>账号管理</span>
           </el-menu-item>
         </el-menu>
       </el-aside>

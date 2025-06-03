@@ -9,7 +9,9 @@ const ProtoParse_Service = require('./service/protoParseService');
 const Douyin_UserService = require('./service/Douyin_UserService');
 const SeleniumService = require('./service/seleniumService');
 const WebSocketService = require('./service/WebSocketService');
+const AdsPowerService = require('./service/AdsPowerService');
 const videoRouter = require('./router/videoRouter');
+const AdsPowerRouter = require('./router/AdsPowerRouter');
 require('dotenv').config();
 
 // 配置日志
@@ -76,7 +78,8 @@ const ConversationInfo = sequelize.define('ConversationInfo', {
 // 创建服务实例
 const protoParseService = new ProtoParse_Service();
 const douyinUserService = new Douyin_UserService(AuthInfo);
-const seleniumService = new SeleniumService(VideoListInfo, ConversationInfo, protoParseService);
+const adsPowerService = new AdsPowerService();
+const seleniumService = new SeleniumService(VideoListInfo, ConversationInfo, protoParseService, adsPowerService);
 const webSocketService = new WebSocketService();
 
 // 初始化数据库
@@ -94,6 +97,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/api/videos', videoRouter(seleniumService));
+app.use('/api/adsPower', AdsPowerRouter(adsPowerService));
 
 
 app.get('/api/userinfo', async (req, res) => {
@@ -148,17 +152,6 @@ app.post('/api/auth/callback', async (req, res) => {
     }
 });
 
-// 连接到AdsPower浏览器
-app.post('/api/selenium/connect', async (req, res) => {
-    try {
-        const { profileId } = req.body;
-        await seleniumService.connectToAdsPower(profileId);
-        res.json({ status: 'success', message: '连接成功' });
-    } catch (error) {
-        console.error('连接失败:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // 获取视频信息
 app.get('/api/selenium/videos', async (req, res) => {
@@ -179,29 +172,6 @@ app.get('/api/selenium/messages', async (req, res) => {
         res.json({ status: 'success', messages });
     } catch (error) {
         console.error('获取私信信息失败:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-app.post('/api/selenium/replymessages', async(req, res) => {
-    try {
-        const { msg } = req.body;
-        const messages = await seleniumService.replyMessages(msg);
-        res.json({ status: 'success', message: '回复成功' });
-    } catch (error) {
-        console.error('获取消息失败:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// 关闭浏览器
-app.post('/api/selenium/close', async (req, res) => {
-    try {
-        await seleniumService.closeBrowser();
-        res.json({ status: 'success', message: '浏览器已关闭' });
-    } catch (error) {
-        console.error('关闭浏览器失败:', error);
         res.status(500).json({ error: error.message });
     }
 });

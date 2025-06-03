@@ -5,25 +5,15 @@
         <h1>抖音运营助手</h1>
         <el-dropdown v-if="isBound" trigger="click">
           <div class="account-dropdown">
-            <el-avatar :size="32" :src="accountInfo.avatar"></el-avatar>
-            <span class="nickname">{{ accountInfo.nickname }}</span>
+            <span>{{ accountInfo.user_id }} - {{ accountInfo.name }}</span>
             <el-icon><ArrowDown /></el-icon>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item v-for="account in accountList" 
-                              :key="account.open_id"
+                              :key="account.user_id"
                               @click="switchAccount(account)">
-                <div class="account-item">
-                  <el-avatar :size="24" :src="account.avatar"></el-avatar>
-                  <span>{{ account.nickname }}</span>
-                </div>
-              </el-dropdown-item>
-              <el-dropdown-item divided>
-                <div class="add-account" @click="RedirectTODouyinAuthPage">
-                  <el-icon><Plus /></el-icon>
-                  <span>添加新账号</span>
-                </div>
+                {{ account.user_id }} - {{ account.name }}
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -54,20 +44,15 @@ export default {
     }
   },
   methods: {
-    async GetAuthUserInfo() {
-      try {
-        console.log('get user info');
-        const response = await api.get('/userinfo');
-        if(response.data.length > 0) {
-          this.accountList = response.data;
-          this.accountInfo = response.data[0];
-          this.isBound = true;
-          console.log('successfully get user info', this.accountInfo.nickname);
-        } else {
-          console.log('no user info');
-        }
-      } catch(error) {
-        console.error('Error fetching user info:', error);
+    async getActiveAccount() {
+      const response = await api.get('/adsPower/userList');
+      this.accountList = response.data.message;
+      console.log(this.accountList);
+      if(this.accountList.length > 0) {
+        this.isBound = true;
+        this.accountInfo = this.accountList[0];
+        console.log('test');
+        console.log(this.accountInfo);
       }
     },
     async RedirectTODouyinAuthPage() {
@@ -86,7 +71,7 @@ export default {
     }
   },
   created() {
-    this.GetAuthUserInfo();
+    this.getActiveAccount();
   }
 }
 </script>

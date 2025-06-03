@@ -3,20 +3,18 @@ const chrome = require('selenium-webdriver/chrome');
 const CDP = require('chrome-remote-interface');
 
 class SeleniumService {
-    constructor(videoListInfo, ConversationInfo, protoParseService) {
-        this.driver = null;
-        this.adsPowerUrl = 'http://local.adspower.net:50325';
-        this.debugPort = null;
+    constructor(videoListInfo, ConversationInfo, protoParseService, adsPowerService) {
         this.requestId = null;
         this.videoListInfo = videoListInfo;
         this.ConversationInfoDB = ConversationInfo;
         this.protoParseService = protoParseService;
         this.videoInfoRefreshHandler = null;
+        this.adsPowerService = adsPowerService;
     }
 
     async bindHookToFetchRequest(){
-        const cdpConnection = await this.driver.createCDPConnection('page');
-        await this.driver.onLogEvent(cdpConnection);
+        const cdpConnection = await this.adsPowerService.driver.createCDPConnection('page');
+        await this.adsPowerService.driver.onLogEvent(cdpConnection);
         const protocol = await CDP({ port: this.debugPort });
         const { Runtime, Network, Fetch } = protocol;
         Fetch.requestPaused(async ({requestId, request, frameId, resourseType}) => {
@@ -120,51 +118,6 @@ class SeleniumService {
         });
     }
 
-    // 连接到AdsPower浏览器
-    async connectToAdsPower(profileId) {
-        try {
-            const response = await fetch(`${this.adsPowerUrl}/api/v1/browser/start?user_id=ky0cw6s`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            const responseBody = await response.body.getReader().read();
-            const data = JSON.parse(new TextDecoder().decode(responseBody.value));
-            console.log(data);
-            const seleniumURL = data.data.ws.selenium;
-            const debugPort = data.data.debug_port;
-            const seleniumWebDriver = data.data.webdriver;
-            const webDriverPath = data.data.webdriver;
-            console.log(seleniumURL, debugPort, seleniumWebDriver);
-            const fullSeleniumURL = seleniumURL.startsWith('http') 
-                ? seleniumURL 
-                : `http://${seleniumURL}`;
-            const chromeOptions = new chrome.Options();
-            chromeOptions.debuggerAddress(seleniumURL);
-            chromeOptions.addArguments('--no-sandbox');
-            chromeOptions.addArguments('--disable-dev-shm-usage');
-            chromeOptions.addArguments('--disable-gpu');
-            const service = new chrome.ServiceBuilder(webDriverPath);
-            console.log('Using Selenium URL:', fullSeleniumURL);  
-            console.log('building drive instance');
-            this.driver = await new Builder()
-                .forBrowser('chrome')
-                .setChromeOptions(chromeOptions)
-                .setChromeService(service)
-                .build();
-            this.debugPort = debugPort;
-            this.driver.get('https://www.douyin.com/user/self?from_tab_name=main&showTab=post');
-            this.bindHookToFetchRequest();
-            this.fetchVideoInfoTimer();
-            // Set up periodic video info fetching
-            console.log('open douyin page');
-            return true;
-        } catch (error) {
-            console.error('连接AdsPower失败:', error);
-            throw error;
-        }
-    }
     
     async getVideoList() {
         try {
@@ -180,14 +133,14 @@ class SeleniumService {
     async fetchVideoInfoTimer() {
         try {
             this.videoInfoRefreshHandler = setInterval(async () => {
-                if (this.driver) {
-                    await this.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
+                if (this.adsPowerService.driver) {
+                    await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
                 }
                 console.log('Successfully fetched video info');
                 await new Promise(resolve => setTimeout(resolve, 5000));
-                await this.driver.get('https://www.douyin.com/user/self?from_tab_name=main');
+                await this.adsPowerService.driver.get('https://www.douyin.com/user/self?from_tab_name=main');
                 // Find and click the element using the specified xpath
-                const element = await this.driver.wait(
+                const element = await this.adsPowerService.driver.wait(
                     until.elementLocated(By.xpath('/html/body/div[2]/div[1]/div[4]/div[1]/div[1]/header/div/div/div[2]/div/pace-island/div/ul[2]/div/li/div/div/div[1]/p')),
                     10000
                 );
@@ -202,23 +155,23 @@ class SeleniumService {
 
     async uploadVideo(title, description, filepath) {
         try {
-            if(this.driver){
-                await this.driver.get('https://creator.douyin.com/creator-micro/content/upload');
+            if(this.adsPowerService.driver){
+                await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/upload');
                 // Wait for 2 seconds
                 await new Promise(resolve => setTimeout(resolve, 3000));
-                //await this.driver.wait(until.urlIs('https://creator.douyin.com/creator-micro/content/upload'));
-                const fileInput = await this.driver.findElement(By.css("div[class^='container'] input"));
+                //await this.adsPowerService.driver.wait(until.urlIs('https://creator.douyin.com/creator-micro/content/upload'));
+                const fileInput = await this.adsPowerService.driver.findElement(By.css("div[class^='container'] input"));
                 await fileInput.sendKeys(filepath);
                 
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 // Wait for title input to be visible and interactable
-                const titleInput = await this.driver.wait(
+                const titleInput = await this.adsPowerService.driver.wait(
                     until.elementLocated(By.xpath("//*[@id='DCPF']/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/input[1]")),
                     10000
                 );
                 await titleInput.clear();
                 await titleInput.sendKeys(title);
-                const descriptionInput = await this.driver.wait(
+                const descriptionInput = await this.adsPowerService.driver.wait(
                     until.elementLocated(By.xpath("//*[@id='DCPF']/DIV[1]/DIV[1]/DIV[1]/DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[1]/DIV[1]/DIV[2]/DIV[1]")),
                     10000
                 );
@@ -226,7 +179,7 @@ class SeleniumService {
                 await descriptionInput.sendKeys(description);
                 await new Promise(resolve => setTimeout(resolve, 30000));
                 // Click the publish button
-                const publishButton = await this.driver.wait(
+                const publishButton = await this.adsPowerService.driver.wait(
                     until.elementLocated(By.xpath("//*[@id='DCPF']/div[1]/div[1]/div[1]/div[5]/div[1]/div[1]/div[1]/div[1]/div[1]/button[1]")),
                     10000
                 );
@@ -240,13 +193,13 @@ class SeleniumService {
 
     async deleteVideo(title) {
         try {
-            if (this.driver) {
-                await this.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
+            if (this.adsPowerService.driver) {
+                await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
                 // Wait for page to load
                 await new Promise(resolve => setTimeout(resolve, 3000));
 
                 // Find all video cards
-                const videoCards = await this.driver.findElements(By.xpath("//*[@id='root']/DIV[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV"));
+                const videoCards = await this.adsPowerService.driver.findElements(By.xpath("//*[@id='root']/DIV[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV"));
 
                 // Loop through cards to find matching title
                 for (const card of videoCards) {
@@ -265,27 +218,6 @@ class SeleniumService {
         } catch (error) {
             console.error('删除视频失败:', error);
             throw error;
-        }
-    }
-
-
-    async replyMessages(message) {
-        try {
-            const cdpConnection = await this.driver.createCDPConnection('page');
-            await this.driver.onLogEvent(cdpConnection);
-            const protocol = await CDP({ port: this.debugPort });
-            return;
-        }catch(error) {
-            console.error('获取私信失败', error);
-            return error;
-        }
-    }
-
-    // 关闭浏览器
-    async closeBrowser() {
-        if (this.driver) {
-            await this.driver.quit();
-            this.driver = null;
         }
     }
 }

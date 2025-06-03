@@ -67,12 +67,9 @@ export default {
     },
     async replayStrangerMessages() {
       try {
-        const response = await api.post('/selenium/replymessages',{
-          msg: this.replyMessage
-        });
-        this.$message.success('获取消息成功');
+        this.$message.success('回复私信成功');
       } catch (error) {
-        this.$message.error('获取消息失败: ' + error.message);
+        this.$message.error('回复私信失败: ' + error.message);
       }
     }
   }

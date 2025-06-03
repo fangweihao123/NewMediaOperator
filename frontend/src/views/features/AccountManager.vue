@@ -15,9 +15,6 @@
             <el-button type="primary" @click="connectToAdsPower">
               打开AdsPower页面
             </el-button>
-            <el-button type="primary" @click="getVideosFromAdsPower">
-              获取视频列表
-            </el-button>
          </div>
         </el-card>
     </div>
