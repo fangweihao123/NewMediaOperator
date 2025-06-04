@@ -29,6 +29,8 @@
 <script>
 import { ArrowDown, Plus } from '@element-plus/icons-vue'
 import api from './api/config'
+import {reactive, provide } from 'vue'
+
 
 export default {
   name: 'App',
@@ -43,6 +45,27 @@ export default {
       accountList: []
     }
   },
+  setup() {
+    const accountState = reactive({
+      account_info: {},
+      is_loading: false
+    })
+    provide('accountState', accountState)
+
+    return {
+      accountState
+    }
+  },
+
+  watch:{
+    accountInfo: {
+      handler(newAccountInfo) {
+        console.log("newAccountInfo", newAccountInfo);
+        this.accountState.account_info = newAccountInfo;
+      }
+    }
+  },
+  
   methods: {
     async getActiveAccount() {
       const response = await api.get('/adsPower/userList');

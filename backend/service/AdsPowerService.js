@@ -2,6 +2,7 @@ const { Builder} = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const CDP = require('chrome-remote-interface');
 const dbManager = require('../Utils/DataBaseManager')
+const ProtoParseService = require('./protoParseService');
 
 
 class AdsPowerService {
@@ -98,8 +99,8 @@ class AdsPowerService {
                                 description: video.desc
                             };
                             const models = await dbManager.getModels(this.profileId);
-                            await models.videoListInfo.sync();
-                            const existingVideo = await models.videoListInfo.findOne({
+                            await models.VideoListInfo.sync();
+                            const existingVideo = await models.VideoListInfo.findOne({
                                 where: {
                                     title: videoData.title,
                                     description: videoData.description
@@ -107,7 +108,7 @@ class AdsPowerService {
                             });
 
                             if (!existingVideo) {
-                                await models.videoListInfo.create(videoData);
+                                await models.VideoListInfo.create(videoData);
                                 console.log('Saved new video:', videoData.title);
                             }
                         }
@@ -122,7 +123,8 @@ class AdsPowerService {
                 if(request.headers.Accept.includes('protobuf')) {
                     if(responseData.base64Encoded) {
                         const decodedBuffer = Buffer.from(responseData.body, 'base64');
-                        const parsedMessage = await this.protoParseService.parseProtobufMessage(decodedBuffer);
+                        const protoParseService = new ProtoParseService();
+                        const parsedMessage = await protoParseService.parseProtobufMessage(decodedBuffer);
                         console.log('初始聊天列表:', parsedMessage);
                         const messageLists = parsedMessage.body.messageByInit.messagesList;
                         for (const message of messageLists) {
@@ -148,7 +150,7 @@ class AdsPowerService {
                             // 保存会话信息到数据库
                             try {
                                 const models = await dbManager.getModels(this.profileId);
-                                const existingConversation = await models.ConversationInfoDB.findOne({
+                                const existingConversation = await models.ConversationInfo.findOne({
                                     where: {
                                         conversation_id: conversationInfo.conversationId
                                     }
@@ -162,7 +164,7 @@ class AdsPowerService {
                                         conversation_id: conversationInfo.conversationId,
                                         conversation: conversation
                                     };
-                                    await models.ConversationInfoDB.create(conversationData);
+                                    await models.ConversationInfo.create(conversationData);
                                 }
                             } catch (error) {
                                 console.error('保存会话信息失败:', error);

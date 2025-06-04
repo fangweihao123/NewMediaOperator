@@ -3,7 +3,7 @@ const chrome = require('selenium-webdriver/chrome');
 const CDP = require('chrome-remote-interface');
 
 class SeleniumService {
-    constructor(videoListInfo, ConversationInfo, protoParseService, adsPowerService) {
+    constructor(adsPowerService) {
         this.videoInfoRefreshHandler = null;
         this.adsPowerService = adsPowerService;
     }

@@ -60,8 +60,10 @@
 </template> 
 
 <script>
+import { watch } from 'vue'
 import api from '../../api/config'
 import { UploadFilled } from '@element-plus/icons-vue'
+import { inject, computed} from 'vue'
 
 export default {
   name: 'VideoManager',
@@ -80,10 +82,35 @@ export default {
       }
     }
   },
+  setup() {
+    const accountState = inject('accountState')
+    return {
+      accountState
+    }
+  },
+  computed: {
+    currentUserId() {
+      console.log("currentUserId", this.accountState.account_info);
+      return this.accountState.account_info?.user_id;
+    }
+  },
+  watch: {
+    currentUserId: {
+      handler(newUserId) {
+        console.log("newUserId", newUserId);
+        this.getVideosFromAdsPower(newUserId);
+      }
+    }
+  },
   methods: {
-    async getVideosFromAdsPower() {
+    async getVideosFromAdsPower(user_id) {
       try {
-        const response = await api.get('/selenium/videos');
+        console.log("user_id", user_id);
+        const response = await api.get('/selenium/videos', {
+          params: {
+            profile_id: user_id
+          }
+        });
         this.videos = response.data.videos;
       } catch (error) {
         this.$message.error('获取视频信息失败: ' + error.message);
@@ -133,9 +160,6 @@ export default {
         this.$message.error('删除视频失败: ' + error.message);
       }
     }
-  },
-  mounted() {
-    this.getVideosFromAdsPower();
   },
   beforeUnmount() {
     if (this.checkInterval) {

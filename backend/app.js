@@ -2,9 +2,7 @@ const { default: Client, OauthAccessTokenRequest } = require('@open-dy/open_api_
 const express = require('express');
 const cors = require('cors');
 const winston = require('winston');
-const Douyin_UserService = require('./service/Douyin_UserService');
 const WebSocketService = require('./service/WebSocketService');
-const videoRouter = require('./router/videoRouter');
 const AdsPowerRouter = require('./router/AdsPowerRouter');
 const dbManager = require('./Utils/DataBaseManager');
 require('dotenv').config();
@@ -29,26 +27,12 @@ const DOUYIN_CLIENT_SECRET = process.env.DOUYIN_CLIENT_SECRET || '7ef22bcf824200
 const DOUYIN_REDIRECT_URI = 'https://418e-116-148-240-41.ngrok-free.app/auth-success';
 const DOUYIN_SCOPES = 'trial.whitelist,user_info,video.list.bind';
 
-// 创建服务实例
-const douyinUserService = new Douyin_UserService(AuthInfo);
 const webSocketService = new WebSocketService();
-
-// 初始化数据库
-(async () => {
-    try {
-        await sequelize.sync();
-        logger.info("Database tables created successfully");
-    } catch (error) {
-        logger.error(`Error creating database tables: ${error.message}`);
-        throw error;
-    }
-})();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use('/api/videos', videoRouter(seleniumService));
-app.use('/api/adsPower', AdsPowerRouter(adsPowerService));
+app.use('/api/adsPower', AdsPowerRouter());
 
 
 app.get('/api/userinfo', async (req, res) => {
@@ -107,9 +91,9 @@ app.post('/api/auth/callback', async (req, res) => {
 // 获取视频信息
 app.get('/api/selenium/videos', async (req, res) => {
     try {
-        const { profile_id } = req.body;
-        const models =  await dbManager.getModels();
-        const videoModel = models.VideoInfo;
+        const profile_id = req.query.profile_id;
+        const models =  await dbManager.getModels(profile_id);
+        const videoModel = models.VideoListInfo;
         const videos = await videoModel.findAll();
         res.json({ status: 'success', videos });
     } catch (error) {

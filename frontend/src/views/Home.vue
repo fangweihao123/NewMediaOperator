@@ -44,8 +44,8 @@ export default {
   },
   data() {
     return {
-      activeMenu: 'account',
-      currentComponent: 'AccountManager'
+      activeMenu: 'video',
+      currentComponent: 'VideoManager'
     }
   },
   methods: {
