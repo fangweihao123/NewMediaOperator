@@ -33,24 +33,63 @@
         <el-dialog
           v-model="uploadDialogVisible"
           title="上传视频"
-          width="500px"
+          width="600px"
         >
           <el-form :model="uploadForm" label-width="100px">
             <el-form-item label="视频标题">
               <el-input v-model="uploadForm.title" placeholder="请输入视频标题"></el-input>
             </el-form-item>
             <el-form-item label="视频描述">
-              <el-input v-model="uploadForm.description" placeholder="请输入视频标题"></el-input>
+              <el-input v-model="uploadForm.description" placeholder="请输入视频描述"></el-input>
+            </el-form-item>
+            <el-form-item label="选择视频">
+              <el-upload
+                ref="upload"
+                :auto-upload="false"
+                :on-change="handleFileChange"
+                :limit="1"
+                accept=".mp4,.avi,.mov,.wmv,.flv,.mkv"
+                :show-file-list="false"
+              >
+                <el-button type="primary">选择本地视频文件</el-button>
+              </el-upload>
+              <div v-if="uploadForm.fileName" style="margin-top: 8px; color: #67c23a;">
+                已选择: {{ uploadForm.fileName }}
+              </div>
             </el-form-item>
             <el-form-item label="视频路径">
-              <el-input v-model="uploadForm.path" placeholder="请输入视频路径"></el-input>
+              <el-input v-model="uploadForm.path" placeholder="视频文件路径" readonly></el-input>
+            </el-form-item>
+            <el-form-item label="定时发布">
+              <el-switch v-model="uploadForm.scheduled" active-text="开启定时" inactive-text="立即发布"></el-switch>
+            </el-form-item>
+            <el-form-item v-if="uploadForm.scheduled" label="发布时间">
+              <el-date-picker
+                v-model="uploadForm.scheduledTime"
+                type="datetime"
+                placeholder="选择发布时间"
+                :disabled-date="disabledDate"
+                :disabled-hours="disabledHours"
+                :disabled-minutes="disabledMinutes"
+                style="width: 100%"
+              />
+            </el-form-item>
+            <el-form-item v-if="uploadForm.scheduled" label="时间模板">
+              <el-select v-model="uploadForm.timeTemplate" placeholder="选择时间模板" @change="applyTimeTemplate" style="width: 100%">
+                <el-option label="1小时后" value="1hour"></el-option>
+                <el-option label="2小时后" value="2hours"></el-option>
+                <el-option label="明天上午9点" value="tomorrow_9am"></el-option>
+                <el-option label="明天下午2点" value="tomorrow_2pm"></el-option>
+                <el-option label="明天晚上8点" value="tomorrow_8pm"></el-option>
+                <el-option label="后天上午10点" value="day_after_10am"></el-option>
+              </el-select>
             </el-form-item>
           </el-form>
           <template #footer>
             <span class="dialog-footer">
               <el-button @click="uploadDialogVisible = false">取消</el-button>
               <el-button type="primary" @click="handleUpload">
-                上传
+                {{ uploadForm.scheduled ? '定时上传' : '立即上传' }}
               </el-button>
             </span>
           </template>
@@ -78,7 +117,11 @@ export default {
       uploadForm: {
         title: '',
         description: '',
-        path: ''
+        path: '',
+        scheduled: false,
+        scheduledTime: null,
+        timeTemplate: '',
+        fileName: ''
       }
     }
   },
@@ -119,15 +162,28 @@ export default {
     showUploadDialog() {
       this.uploadDialogVisible = true;
       this.uploadForm = {
-        title: '游戏',
-        description: '揭秘',
-        path: 'C:\\Users\\13701\\Videos\\2025-04-06 18-01-17.mp4'
-        // path: '/Users/leon/Documents/游戏UP主/短视频揭秘第一期/双人成行短视频揭秘.mp4'
+        title: '',
+        description: '',
+        path: '',
+        scheduled: false,
+        scheduledTime: null,
+        timeTemplate: '',
+        fileName: ''
       };
     },
     handleFileChange(file) {
-      this.uploadForm.path = file.raw.path;
-      console.log(file);
+      if (file && file.raw) {
+        // 获取文件路径 (在浏览器环境中，可能需要通过webkitRelativePath或其他方式获取)
+        this.uploadForm.path = file.raw.webkitRelativePath || file.raw.name;
+        this.uploadForm.fileName = file.name;
+        
+        // 如果是Electron环境，可以获取实际文件路径
+        if (file.raw.path) {
+          this.uploadForm.path = file.raw.path;
+        }
+        
+        console.log('Selected file:', file);
+      }
     },
     async handleUpload() {
       if (!this.uploadForm.title) {
@@ -138,13 +194,22 @@ export default {
         this.$message.warning('请选择视频文件');
         return;
       }
+      if (this.uploadForm.scheduled && !this.uploadForm.scheduledTime) {
+        this.$message.warning('请选择发布时间');
+        return;
+      }
 
       try {
-        await api.post('/videos/upload', {
+        const uploadData = {
           title: this.uploadForm.title,
           description: this.uploadForm.description,
-          video: this.uploadForm.path
-        });
+          video: this.uploadForm.path,
+          scheduled: this.uploadForm.scheduled,
+          scheduledTime: this.uploadForm.scheduledTime
+        };
+
+        await api.post('/videos/upload', uploadData);
+        this.$message.success(this.uploadForm.scheduled ? '定时上传设置成功' : '视频上传成功');
         this.uploadDialogVisible = false;
       } catch (error) {
         this.$message.error('视频上传失败: ' + error.message);
@@ -160,6 +225,55 @@ export default {
       } catch (error) {
         this.$message.error('删除视频失败: ' + error.message);
       }
+    },
+    disabledDate(date) {
+      // 禁用过去的日期
+      return date.getTime() < Date.now() - 24 * 60 * 60 * 1000;
+    },
+    disabledHours() {
+      // 不禁用任何小时
+      return [];
+    },
+    disabledMinutes() {
+      // 不禁用任何分钟
+      return [];
+    },
+    applyTimeTemplate(value) {
+      const now = new Date();
+      let targetTime = new Date();
+      
+      switch (value) {
+        case '1hour':
+          targetTime = new Date(now.getTime() + 60 * 60 * 1000);
+          break;
+        case '2hours':
+          targetTime = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+          break;
+        case 'tomorrow_9am':
+          targetTime = new Date(now);
+          targetTime.setDate(now.getDate() + 1);
+          targetTime.setHours(9, 0, 0, 0);
+          break;
+        case 'tomorrow_2pm':
+          targetTime = new Date(now);
+          targetTime.setDate(now.getDate() + 1);
+          targetTime.setHours(14, 0, 0, 0);
+          break;
+        case 'tomorrow_8pm':
+          targetTime = new Date(now);
+          targetTime.setDate(now.getDate() + 1);
+          targetTime.setHours(20, 0, 0, 0);
+          break;
+        case 'day_after_10am':
+          targetTime = new Date(now);
+          targetTime.setDate(now.getDate() + 2);
+          targetTime.setHours(10, 0, 0, 0);
+          break;
+        default:
+          return;
+      }
+      
+      this.uploadForm.scheduledTime = targetTime;
     }
   },
   beforeUnmount() {

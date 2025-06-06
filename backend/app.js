@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const winston = require('winston');
 const WebSocketService = require('./service/WebSocketService');
+const ConversationAnalysisService = require('./service/ConversationAnalysisService');
 const AdsPowerRouter = require('./router/AdsPowerRouter');
 const videoRouter = require('./router/videoRouter');
 const dbManager = require('./Manager/DataBaseManager');
@@ -107,7 +108,9 @@ app.get('/api/selenium/videos', async (req, res) => {
 // 获取私信信息
 app.get('/api/selenium/messages', async (req, res) => {
     try {
-        const messages = await ConversationInfo.findAll();
+        const profile_id = req.query.profile_id;
+        const models = await dbManager.getModels(profile_id);
+        const messages = await models.ConversationInfo.findAll();
         res.json({ status: 'success', messages });
     } catch (error) {
         console.error('获取私信信息失败:', error);
@@ -115,10 +118,100 @@ app.get('/api/selenium/messages', async (req, res) => {
     }
 });
 
+// 对话分析服务相关API
+// 启动对话分析服务
+app.post('/api/conversation-analysis/start', async (req, res) => {
+    try {
+        await ConversationAnalysisService.start();
+        res.json({ status: 'success', message: '对话分析服务已启动' });
+    } catch (error) {
+        console.error('启动对话分析服务失败:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 停止对话分析服务
+app.post('/api/conversation-analysis/stop', async (req, res) => {
+    try {
+        ConversationAnalysisService.stop();
+        res.json({ status: 'success', message: '对话分析服务已停止' });
+    } catch (error) {
+        console.error('停止对话分析服务失败:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 获取分析结果
+app.get('/api/conversation-analysis/results', async (req, res) => {
+    try {
+        const profile_id = req.query.profile_id;
+        if (!profile_id) {
+            return res.status(400).json({ error: 'profile_id is required' });
+        }
+        
+        const results = await ConversationAnalysisService.getAnalysisResults(profile_id);
+        res.json({ status: 'success', results });
+    } catch (error) {
+        console.error('获取分析结果失败:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 手动触发单个对话分析
+app.post('/api/conversation-analysis/analyze', async (req, res) => {
+    try {
+        const { conversation_text } = req.body;
+        if (!conversation_text) {
+            return res.status(400).json({ error: '对话内容不能为空' });
+        }
+        
+        const result = await ConversationAnalysisService.analyzeConversation(conversation_text);
+        res.status(result.status === 200 ? 200 : 404).json(result);
+    } catch (error) {
+        console.error('分析对话失败:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 清除已处理记录
+app.post('/api/conversation-analysis/clear-processed', async (req, res) => {
+    try {
+        ConversationAnalysisService.clearProcessedRecords();
+        res.json({ status: 'success', message: '已清除处理记录' });
+    } catch (error) {
+        console.error('清除处理记录失败:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 设置检查间隔
+app.post('/api/conversation-analysis/set-interval', async (req, res) => {
+    try {
+        const { interval } = req.body;
+        if (!interval || interval < 5000) {
+            return res.status(400).json({ error: '间隔时间不能少于5秒' });
+        }
+        
+        ConversationAnalysisService.setCheckInterval(interval);
+        res.json({ status: 'success', message: `检查间隔已设置为${interval}ms` });
+    } catch (error) {
+        console.error('设置检查间隔失败:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // 启动服务器
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
     console.log(`Starting Express application...`);
     logger.info(`Server is running on port ${PORT}`);
     webSocketService.connect();
+    
+    // 自动启动对话分析服务
+    try {
+        await ConversationAnalysisService.start();
+        console.log('ConversationAnalysisService started automatically');
+    } catch (error) {
+        console.error('Failed to start ConversationAnalysisService:', error);
+    }
 }); 

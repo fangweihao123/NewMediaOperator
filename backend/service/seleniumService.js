@@ -38,7 +38,7 @@ class SeleniumService {
                     );
                     await element.click();
                 });
-            }, 60000); // Fetch every 60 seconds
+            }, 10000); // Fetch every 60 seconds
 
         } catch (error) {
             console.error('获取视频信息失败:', error);
@@ -84,35 +84,33 @@ class SeleniumService {
         }
     }
 
-    async deleteVideo(title, taskManager) {
+    async deleteVideo(title) {
         try {
-            taskManager.addDelayedTask(async () => {
-                if (this.adsPowerService.driver) {
-                    await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
-                    // Wait for page to load
-                    await new Promise(resolve => setTimeout(resolve, 3000));
+            if (this.adsPowerService.driver) {
+                await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
+                // Wait for page to load
+                await new Promise(resolve => setTimeout(resolve, 3000));
 
-                    // Find all video cards
-                    const videoCards = await this.adsPowerService.driver.findElements(By.xpath("//*[@id='root']/DIV[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV"));
+                // Find all video cards
+                const videoCards = await this.adsPowerService.driver.findElements(By.xpath("//*[@id='root']/DIV[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV"));
 
-                    // Loop through cards to find matching title
-                    for (const card of videoCards) {
-                        const titleElement = await card.findElement(By.xpath("DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[1]"));
-                        const cardTitle = await titleElement.getText();
-                        
-                        if (cardTitle === title) {
-                            // Find and click delete button within this card
-                            const deleteButton = await card.findElement(By.xpath("DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[2]/DIV[1]/DIV[4]/SPAN[1]"));
-                            await deleteButton.click();
-                            const deleteConfirmButton = await this.adsPowerService.driver.wait(
-                                until.elementLocated(By.xpath("//*[@id='dialog-0']/DIV[1]/DIV[1]/DIV[1]/DIV[3]/BUTTON[2]")),
-                                10000
-                            );
-                            await deleteConfirmButton.click();
-                        }
+                // Loop through cards to find matching title
+                for (const card of videoCards) {
+                    const titleElement = await card.findElement(By.xpath("DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[1]"));
+                    const cardTitle = await titleElement.getText();
+                    
+                    if (cardTitle === title) {
+                        // Find and click delete button within this card
+                        const deleteButton = await card.findElement(By.xpath("DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[2]/DIV[1]/DIV[4]/SPAN[1]"));
+                        await deleteButton.click();
+                        const deleteConfirmButton = await this.adsPowerService.driver.wait(
+                            until.elementLocated(By.xpath("//*[@id='dialog-0']/DIV[1]/DIV[1]/DIV[1]/DIV[3]/BUTTON[2]")),
+                            10000
+                        );
+                        await deleteConfirmButton.click();
                     }
                 }
-            }, 5000);
+            }
         } catch (error) {
             console.error('删除视频失败:', error);
             throw error;

@@ -136,7 +136,7 @@ class AdsPowerService {
                                 try {
                                     const messageContent = JSON.parse(messageListContent[i].content);
                                     if (messageContent.aweType === 700) {
-                                        if(cnt <= 3 && messageContent.text){
+                                        if(cnt <= 3 && messageContent.text && messageContent.text.trim()){
                                             conversation += messageContent.text;
                                             conversation += '\n';
                                             cnt++;
@@ -156,15 +156,17 @@ class AdsPowerService {
                                     }
                                 });
 
-                                if (existingConversation) {
-                                    existingConversation.conversation = conversation;
-                                    await existingConversation.save();
-                                } else {
-                                    const conversationData = {
-                                        conversation_id: conversationInfo.conversationId,
-                                        conversation: conversation
-                                    };
-                                    await models.ConversationInfo.create(conversationData);
+                                if(conversation.length > 0){
+                                    if (existingConversation) {
+                                        existingConversation.conversation = conversation;
+                                        await existingConversation.save();
+                                    } else {
+                                        const conversationData = {
+                                            conversation_id: conversationInfo.conversationId,
+                                            conversation: conversation
+                                        };
+                                        await models.ConversationInfo.create(conversationData);
+                                    }
                                 }
                             } catch (error) {
                                 console.error('保存会话信息失败:', error);
