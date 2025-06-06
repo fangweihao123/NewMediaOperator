@@ -13,6 +13,9 @@
           <el-menu-item index="message">
             <span>私信管理</span>
           </el-menu-item>
+          <el-menu-item index="analysis">
+            <span>对话分析</span>
+          </el-menu-item>
           <el-menu-item index="account">
             <span>账号管理</span>
           </el-menu-item>
@@ -31,6 +34,7 @@ import api from '../api/config'
 import AccountManager from './features/AccountManager.vue'
 import VideoManager from './features/VideoManager.vue'
 import MessageManager from './features/MessageManager.vue'
+import AnalysisResults from './features/AnalysisResults.vue'
 
 export default {
   name: 'Home',
@@ -40,7 +44,8 @@ export default {
     Message,
     AccountManager,
     VideoManager,
-    MessageManager
+    MessageManager,
+    AnalysisResults
   },
   data() {
     return {
@@ -60,6 +65,9 @@ export default {
           break;
         case 'message':
           this.currentComponent = 'MessageManager';
+          break;
+        case 'analysis':
+          this.currentComponent = 'AnalysisResults';
           break;
         default:
           this.currentComponent = 'AccountManager';

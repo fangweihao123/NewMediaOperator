@@ -5,7 +5,7 @@ class ConversationAnalysisService {
     constructor() {
         this.isRunning = false;
         this.checkInterval = null;
-        this.arkApiKey = process.env.ARK_API_KEY || 'your-ark-api-key';
+        this.arkApiKey = process.env.ARK_API_KEY || '55c9eede-6fda-4c34-827c-e33152a22b94';
         this.apiUrl = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
         this.intervalMs = 30000; // 30秒检查一次
         this.processedConversations = new Set(); // 记录已处理的对话ID
@@ -128,7 +128,6 @@ class ConversationAnalysisService {
             });
 
             const aiResponse = response.data.choices[0].message.content.trim();
-            console.log('AI Response:', aiResponse);
 
             // 解析AI响应
             if (aiResponse === 'NO_INFO') {
@@ -142,7 +141,7 @@ class ConversationAnalysisService {
                 const hasNicknames = parsedData.nicknames && parsedData.nicknames.length > 0;
                 const hasContacts = parsedData.contacts && parsedData.contacts.length > 0;
                 
-                if (hasNicknames || hasContacts) {
+                if (hasNicknames && hasContacts) {
                     return { 
                         status: 200, 
                         data: parsedData,
