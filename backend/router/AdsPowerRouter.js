@@ -1,6 +1,6 @@
 const express = require('express');
 const AdsPowerService = require('../service/AdsPowerService');
-const SeleniumService = require('../service/seleniumService');
+const serviceManager = require('../Manager/ServiceManager');
 
 module.exports = () => {
     const router = express.Router();
@@ -9,10 +9,10 @@ module.exports = () => {
     router.post('/connect', async (req, res) => {
         try {
             const { profileId } = req.body;
-            const adsPowerService = new AdsPowerService(profileId);
-            await adsPowerService.connectToAdsPower();
-            const seleniumService = new SeleniumService(adsPowerService);
-            await seleniumService.fetchVideoInfoTimer();
+            serviceManager.InitService(profileId);
+            const service = serviceManager.getService(profileId);
+            service.adsPowerService.connectToAdsPower();
+            service.seleniumService.fetchVideoInfoTimer(service.taskScheduleService);
             res.json({ status: 'success', message: '连接成功' });
         } catch (error) {
             console.error('连接失败:', error);

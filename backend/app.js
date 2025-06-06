@@ -4,7 +4,8 @@ const cors = require('cors');
 const winston = require('winston');
 const WebSocketService = require('./service/WebSocketService');
 const AdsPowerRouter = require('./router/AdsPowerRouter');
-const dbManager = require('./Utils/DataBaseManager');
+const videoRouter = require('./router/videoRouter');
+const dbManager = require('./Manager/DataBaseManager');
 require('dotenv').config();
 
 // 配置日志
@@ -33,7 +34,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/api/adsPower', AdsPowerRouter());
-
+app.use('/api/videos', videoRouter());
 
 app.get('/api/userinfo', async (req, res) => {
     const userInfos = await douyinUserService.GetAuthUserInfo();

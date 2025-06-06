@@ -20,22 +20,25 @@ class SeleniumService {
     }
 
     // 获取视频信息
-    async fetchVideoInfoTimer() {
+    async fetchVideoInfoTimer(taskManager) {
         try {
+            //这个需要不断加入到TaskManager
             this.videoInfoRefreshHandler = setInterval(async () => {
-                if (this.adsPowerService.driver) {
-                    await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
-                }
-                console.log('Successfully fetched video info');
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                await this.adsPowerService.driver.get('https://www.douyin.com/user/self?from_tab_name=main');
-                // Find and click the element using the specified xpath
-                const element = await this.adsPowerService.driver.wait(
-                    until.elementLocated(By.xpath('/html/body/div[2]/div[1]/div[4]/div[1]/div[1]/header/div/div/div[2]/div/pace-island/div/ul[2]/div/li/div/div/div[1]/p')),
-                    10000
-                );
-                await element.click();
-            }, 20000); // Fetch every 60 seconds
+                taskManager.addTask(async () => {
+                    if (this.adsPowerService.driver) {
+                        await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
+                    }
+                    console.log('Successfully fetched video info');
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                    await this.adsPowerService.driver.get('https://www.douyin.com/user/self?from_tab_name=main');
+                    // Find and click the element using the specified xpath
+                    const element = await this.adsPowerService.driver.wait(
+                        until.elementLocated(By.xpath('/html/body/div[2]/div[1]/div[4]/div[1]/div[1]/header/div/div/div[2]/div/pace-island/div/ul[2]/div/li/div/div/div[1]/p')),
+                        10000
+                    );
+                    await element.click();
+                });
+            }, 60000); // Fetch every 60 seconds
 
         } catch (error) {
             console.error('获取视频信息失败:', error);
@@ -81,30 +84,35 @@ class SeleniumService {
         }
     }
 
-    async deleteVideo(title) {
+    async deleteVideo(title, taskManager) {
         try {
-            if (this.adsPowerService.driver) {
-                await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
-                // Wait for page to load
-                await new Promise(resolve => setTimeout(resolve, 3000));
+            taskManager.addDelayedTask(async () => {
+                if (this.adsPowerService.driver) {
+                    await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
+                    // Wait for page to load
+                    await new Promise(resolve => setTimeout(resolve, 3000));
 
-                // Find all video cards
-                const videoCards = await this.adsPowerService.driver.findElements(By.xpath("//*[@id='root']/DIV[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV"));
+                    // Find all video cards
+                    const videoCards = await this.adsPowerService.driver.findElements(By.xpath("//*[@id='root']/DIV[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV"));
 
-                // Loop through cards to find matching title
-                for (const card of videoCards) {
-                    const titleElement = await card.findElement(By.xpath("DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[1]"));
-                    const cardTitle = await titleElement.getText();
-                    
-                    if (cardTitle === title) {
-                        // Find and click delete button within this card
-                        const deleteButton = await card.findElement(By.xpath("DIV[2]/DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[2]/DIV[1]/DIV[4]/SPAN[1]"));
-                        await deleteButton.click();
-                        // Wait for confirmation dialog and click confirm
-                        break;
+                    // Loop through cards to find matching title
+                    for (const card of videoCards) {
+                        const titleElement = await card.findElement(By.xpath("DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[1]"));
+                        const cardTitle = await titleElement.getText();
+                        
+                        if (cardTitle === title) {
+                            // Find and click delete button within this card
+                            const deleteButton = await card.findElement(By.xpath("DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[2]/DIV[1]/DIV[4]/SPAN[1]"));
+                            await deleteButton.click();
+                            const deleteConfirmButton = await this.adsPowerService.driver.wait(
+                                until.elementLocated(By.xpath("//*[@id='dialog-0']/DIV[1]/DIV[1]/DIV[1]/DIV[3]/BUTTON[2]")),
+                                10000
+                            );
+                            await deleteConfirmButton.click();
+                        }
                     }
-            }
-        }
+                }
+            }, 5000);
         } catch (error) {
             console.error('删除视频失败:', error);
             throw error;

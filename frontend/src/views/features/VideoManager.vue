@@ -17,7 +17,7 @@
                 <template #default="scope">
                   <el-button 
                     size="small" 
-                    type="primary" @click="deleteVideo(scope.row.title)">
+                    type="primary" @click="deleteVideo(scope.row.description)">
                     删除视频
                   </el-button>
                 </template>
@@ -150,10 +150,11 @@ export default {
         this.$message.error('视频上传失败: ' + error.message);
       }
     },
-    async deleteVideo(title) {
+    async deleteVideo(description) {
       try {
         await api.post('/videos/delete', {
-          title: title
+          profileId: this.currentUserId,
+          title: description
         });
         this.$message.success('删除视频成功');
       } catch (error) {
