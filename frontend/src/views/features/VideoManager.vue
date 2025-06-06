@@ -42,23 +42,18 @@
             <el-form-item label="视频描述">
               <el-input v-model="uploadForm.description" placeholder="请输入视频描述"></el-input>
             </el-form-item>
-            <el-form-item label="选择视频">
-              <el-upload
-                ref="upload"
-                :auto-upload="false"
-                :on-change="handleFileChange"
-                :limit="1"
-                accept=".mp4,.avi,.mov,.wmv,.flv,.mkv"
-                :show-file-list="false"
-              >
-                <el-button type="primary">选择本地视频文件</el-button>
-              </el-upload>
-              <div v-if="uploadForm.fileName" style="margin-top: 8px; color: #67c23a;">
-                已选择: {{ uploadForm.fileName }}
-              </div>
-            </el-form-item>
             <el-form-item label="视频路径">
-              <el-input v-model="uploadForm.path" placeholder="视频文件路径" readonly></el-input>
+              <el-input 
+                v-model="uploadForm.path" 
+                placeholder="请输入视频文件完整路径 (例如: E:\Videos\example.mp4)"
+                clearable
+              >
+                <template #suffix>
+                  <el-tooltip content="支持格式: mp4, avi, mov, wmv, flv, mkv" placement="top">
+                    <el-icon><InfoFilled /></el-icon>
+                  </el-tooltip>
+                </template>
+              </el-input>
             </el-form-item>
             <el-form-item label="定时发布">
               <el-switch v-model="uploadForm.scheduled" active-text="开启定时" inactive-text="立即发布"></el-switch>
@@ -101,13 +96,14 @@
 <script>
 import { watch } from 'vue'
 import api from '../../api/config'
-import { UploadFilled } from '@element-plus/icons-vue'
+import { UploadFilled, InfoFilled } from '@element-plus/icons-vue'
 import { inject, computed} from 'vue'
 
 export default {
   name: 'VideoManager',
   components: {
-    UploadFilled
+    UploadFilled,
+    InfoFilled
   },
   data() {
     return {
@@ -120,8 +116,7 @@ export default {
         path: '',
         scheduled: false,
         scheduledTime: null,
-        timeTemplate: '',
-        fileName: ''
+        timeTemplate: ''
       }
     }
   },
@@ -167,31 +162,17 @@ export default {
         path: '',
         scheduled: false,
         scheduledTime: null,
-        timeTemplate: '',
-        fileName: ''
+        timeTemplate: ''
       };
     },
-    handleFileChange(file) {
-      if (file && file.raw) {
-        // 获取文件路径 (在浏览器环境中，可能需要通过webkitRelativePath或其他方式获取)
-        this.uploadForm.path = file.raw.webkitRelativePath || file.raw.name;
-        this.uploadForm.fileName = file.name;
-        
-        // 如果是Electron环境，可以获取实际文件路径
-        if (file.raw.path) {
-          this.uploadForm.path = file.raw.path;
-        }
-        
-        console.log('Selected file:', file);
-      }
-    },
+
     async handleUpload() {
       if (!this.uploadForm.title) {
         this.$message.warning('请输入视频标题');
         return;
       }
       if (!this.uploadForm.path) {
-        this.$message.warning('请选择视频文件');
+        this.$message.warning('请输入视频文件路径');
         return;
       }
       if (this.uploadForm.scheduled && !this.uploadForm.scheduledTime) {
@@ -201,6 +182,7 @@ export default {
 
       try {
         const uploadData = {
+          profileId: this.currentUserId,
           title: this.uploadForm.title,
           description: this.uploadForm.description,
           video: this.uploadForm.path,
@@ -275,6 +257,9 @@ export default {
       
       this.uploadForm.scheduledTime = targetTime;
     }
+  },
+  created() {
+    this.getVideosFromAdsPower(this.currentUserId);
   },
   beforeUnmount() {
     if (this.checkInterval) {

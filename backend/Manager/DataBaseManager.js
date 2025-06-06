@@ -72,6 +72,28 @@ class DatabaseManager {
                 conversation: {
                     type: DataTypes.STRING(200)
                 }
+            }),
+
+            AnalysisResult: sequelize.define('AnalysisResult', {
+                id: {
+                    type: DataTypes.INTEGER,
+                    primaryKey: true,
+                    autoIncrement: true
+                },
+                conversation_id: {
+                    type: DataTypes.STRING(200),
+                    allowNull: false
+                },
+                nicknames: {
+                    type: DataTypes.TEXT
+                },
+                contacts: {
+                    type: DataTypes.TEXT
+                },
+                analyzed_at: {
+                    type: DataTypes.DATE,
+                    defaultValue: DataTypes.NOW
+                }
             })
         };
 

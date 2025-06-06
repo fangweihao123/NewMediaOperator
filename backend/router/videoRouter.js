@@ -4,8 +4,8 @@ const serviceManager = require('../Manager/ServiceManager');
 module.exports = () => {
     const router = express.Router();
     router.post('/upload', async (req, res) => {
-        const { title, description, video, scheduled, scheduledTime} = req.body;
-        console.log(title, description, video);
+        const { profileId, title, description, video, scheduled, scheduledTime} = req.body;
+        console.log(profileId, title, description, video);
         const service = serviceManager.getService(profileId);
         const taskScheduleService = service.taskScheduleService;
         if(scheduled){

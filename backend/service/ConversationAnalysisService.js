@@ -176,41 +176,32 @@ class ConversationAnalysisService {
             
             // 检查是否存在AnalysisResult表，如果不存在则创建
             if (!models.AnalysisResult) {
-                const { DataTypes } = require('sequelize');
-                const sequelize = dbManager.connections.get(profileId);
-                
-                models.AnalysisResult = sequelize.define('AnalysisResult', {
-                    id: {
-                        type: DataTypes.INTEGER,
-                        primaryKey: true,
-                        autoIncrement: true
-                    },
-                    conversation_id: {
-                        type: DataTypes.STRING(200),
-                        allowNull: false
-                    },
-                    nicknames: {
-                        type: DataTypes.TEXT
-                    },
-                    contacts: {
-                        type: DataTypes.TEXT
-                    },
-                    analyzed_at: {
-                        type: DataTypes.DATE,
-                        defaultValue: DataTypes.NOW
-                    }
-                });
-
                 await models.AnalysisResult.sync();
             }
 
-            // 保存分析结果
-            await models.AnalysisResult.create({
-                conversation_id: conversationId,
-                nicknames: JSON.stringify(analysisData.nicknames || []),
-                contacts: JSON.stringify(analysisData.contacts || []),
-                analyzed_at: new Date()
+            // 检查是否已存在相同conversation_id的记录
+            const existingResult = await models.AnalysisResult.findOne({
+                where: {
+                    conversation_id: conversationId
+                }
             });
+
+            if (existingResult) {
+                // 如果存在则更新
+                await existingResult.update({
+                    nicknames: JSON.stringify(analysisData.nicknames || []),
+                    contacts: JSON.stringify(analysisData.contacts || []),
+                    analyzed_at: new Date()
+                });
+            } else {
+                // 如果不存在则创建新记录
+                await models.AnalysisResult.create({
+                    conversation_id: conversationId,
+                    nicknames: JSON.stringify(analysisData.nicknames || []),
+                    contacts: JSON.stringify(analysisData.contacts || []),
+                    analyzed_at: new Date()
+                });
+            }
 
             console.log(`Analysis result saved for conversation ${conversationId}`);
         } catch (error) {
@@ -227,9 +218,7 @@ class ConversationAnalysisService {
                 return [];
             }
 
-            const results = await models.AnalysisResult.findAll({
-                order: [['analyzed_at', 'DESC']]
-            });
+            const results = await models.AnalysisResult.findAll();
 
             return results.map(result => ({
                 id: result.id,

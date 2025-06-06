@@ -79,7 +79,7 @@ export default {
 
     async refreshResults() {
       try {
-        const response = await api.get('/api/conversation-analysis/results', {
+        const response = await api.get('/conversation-analysis/results', {
           params: {
             profile_id: this.currentUserId
           }
