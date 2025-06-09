@@ -104,7 +104,6 @@ class AdsPowerService {
                                 const existingVideo = await models.VideoListInfo.findOne({
                                     where: {
                                         title: videoData.title,
-                                        description: videoData.description
                                     }
                                 });
 

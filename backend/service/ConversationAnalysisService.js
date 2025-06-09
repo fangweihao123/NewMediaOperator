@@ -1,5 +1,6 @@
 const dbManager = require('../Manager/DataBaseManager');
 const axios = require('axios');
+const { Op } = require('sequelize');
 
 class ConversationAnalysisService {
     constructor() {
@@ -217,8 +218,21 @@ class ConversationAnalysisService {
             if (!models.AnalysisResult) {
                 return [];
             }
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
 
-            const results = await models.AnalysisResult.findAll();
+            const results = await models.AnalysisResult.findAll(
+                {
+                    where: {
+                        analyzed_at: {
+                            [Op.between]:[today, tomorrow]
+                        }
+                    },
+                    order: [['analyzed_at', 'DESC']]
+                }
+            );
 
             return results.map(result => ({
                 id: result.id,
