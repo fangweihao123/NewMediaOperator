@@ -5,8 +5,10 @@ package douyin;
 import "MessagePerUserRequestBody.proto";
 import "CreateConversationV2RequestBody.proto";
 import "MessageByInit.proto";
+import "SendMessageRequestBody.proto";
 
 message RequestBody {
+  SendMessageRequestBody SendMessageRequestBody = 100;
   MessagePerUserRequestBody messagePerUser = 200;
   CreateConversationV2RequestBody CreateConversationV2RequestBody = 609;
   MessageByInit message_by_init = 2043;

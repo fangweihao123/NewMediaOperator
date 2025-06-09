@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package douyin;
+
+message ReferencedMessageInfo {
+  int64 referenced_message_id = 1;
+  string hint = 2;
+  int64 root_message_id = 3;
+  int64 root_message_conv_index = 4;
+  map<string, string> ext = 5;
+}
