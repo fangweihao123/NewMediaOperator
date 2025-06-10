@@ -6,6 +6,7 @@ import "MessagePerUserResponseBody.proto";
 import "GetUserConversationListResponseBody.proto";
 import "CreateConversationV2ResponseBody.proto";
 import "MessageByInitResponseBody.proto";
+import "SendMessageResponseBody.proto";
 
 message Response {
   int32 cmd = 1;
@@ -55,7 +56,6 @@ message ResponseBody {
   GetUserMessageResponseBody get_user_message = 2048;
 }
 
-  message SendMessageResponseBody  { }
   message MessagesPerUserInitV2ResponseBody { }
   message GetMessageByIdResponseBody { }
   message MessagesInConversationResponseBody { }
