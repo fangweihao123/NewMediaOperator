@@ -4,6 +4,9 @@
           <template #header>
             <div class="card-header">
               <span>视频列表</span>
+              <el-button type="primary" @click="showGenerateAIVideoDialog">
+                生成AI视频
+              </el-button>
               <el-button type="primary" @click="showUploadDialog">
                 上传视频
               </el-button>
@@ -89,6 +92,35 @@
             </span>
           </template>
         </el-dialog>
+        <!-- 生成视频对话框 -->
+        <el-dialog
+          v-model="generateAIVideoDialogVisible"
+          title="生成AI视频"
+          width="600px"
+        >
+          <el-form :model="generateAIVideoForm" label-width="100px">
+            <el-form-item label="背景音乐关键词">
+              <el-input v-model="generateAIVideoForm.bgm" placeholder="请输入背景音乐关键词"></el-input>
+            </el-form-item>
+            <el-form-item label="视频背景字幕">
+              <el-input v-model="generateAIVideoForm.subtitle" placeholder="请输入背景字幕"></el-input>
+            </el-form-item>
+            <el-form-item label="AI生成视频关键词">
+              <el-input v-model="generateAIVideoForm.video_prompt" placeholder="请输入AI生成视频关键词"></el-input>
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="generateAIVideoDialogVisible = false">取消</el-button>
+              <el-button 
+                type="primary" 
+                @click="handleGenerateAIVideo"
+                :disabled="isGeneratingAIVideo">
+                {{ isGeneratingAIVideo ? '生成中(约2分钟)...' : '立即生成' }}
+              </el-button>
+            </span>
+          </template>
+        </el-dialog>
     </div>
     
 </template> 
@@ -98,6 +130,7 @@ import { watch } from 'vue'
 import api from '../../api/config'
 import { UploadFilled, InfoFilled } from '@element-plus/icons-vue'
 import { inject, computed} from 'vue'
+import axios from 'axios';
 
 export default {
   name: 'VideoManager',
@@ -110,6 +143,8 @@ export default {
       videos: [],
       checkInterval: null,
       uploadDialogVisible: false,
+      generateAIVideoDialogVisible: false,
+      isGeneratingAIVideo: false,
       uploadForm: {
         title: '',
         description: '',
@@ -117,7 +152,12 @@ export default {
         scheduled: false,
         scheduledTime: null,
         timeTemplate: ''
-      }
+      },
+      generateAIVideoForm: {
+        bgm: '',
+        subtitle: '',
+        video_prompt: '',
+      },
     }
   },
   setup() {
@@ -154,6 +194,80 @@ export default {
         this.$message.error('获取视频信息失败: ' + error.message);
       }
     },
+    showGenerateAIVideoDialog() {
+      this.generateAIVideoDialogVisible = true;
+      this.generateAIVideoForm = {
+        bgm: '',
+        subtitle: '',
+        video_prompt: '',
+      };
+    },
+
+    async handleGenerateAIVideo() {
+      if (this.isGeneratingAIVideo) {
+        this.$message.warning('正在生成视频，请稍后再试');
+        return;
+      }
+      this.isGeneratingAIVideo = true;
+      if (!this.generateAIVideoForm.bgm) {
+        this.$message.warning('请输入bgm关键词');
+        return;
+      }
+      if (!this.generateAIVideoForm.subtitle) {
+        this.$message.warning('请输入字幕');
+        return;
+      }
+      if (!this.generateAIVideoForm.video_prompt) {
+        this.$message.warning('请输入视频关键词');
+        return;
+      }
+
+      try {
+        //console.log("data", JSON.stringify(data));
+        const generateAIVideoData = {
+          "parameters": {
+            "bgm": this.generateAIVideoForm.bgm,
+            "subtitle": this.generateAIVideoForm.subtitle,
+            "videoprompt": this.generateAIVideoForm.video_prompt
+          },
+          "workflow_id": "7513593541714673705"
+        };
+        const response = await axios.post('https://api.coze.cn/v1/workflow/run', generateAIVideoData, {
+          headers: {
+            'Authorization': 'Bearer pat_a6b6pXlv8V7ypbsArQF3DAxCmsZ7EYvNPwqSQZU7kUfxqhZeGgEzcz0vzm7qO1rA',
+            'Content-Type': 'application/json'
+          }
+        });
+        const data = JSON.parse(response.data.data);
+        const video_url = data.output;
+        console.log("response", video_url);
+        try {
+          const response = await axios({
+            url: video_url,
+            method: 'GET',
+            responseType: 'blob'
+          });
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `ai_video_${Date.now()}.mp4`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error('下载视频失败:', error);
+          this.$message.error('下载视频失败');
+        }
+        this.$message.success('AI视频生成完成');
+        this.generateAIVideoDialogVisible = false;
+        this.isGeneratingAIVideo = false;
+      } catch (error) {
+        this.isGeneratingAIVideo = false;
+        this.$message.error('视频上传失败: ' + error.message);
+      }
+    },
+
     showUploadDialog() {
       this.uploadDialogVisible = true;
       this.uploadForm = {
