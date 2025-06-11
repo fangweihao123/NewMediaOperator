@@ -6,6 +6,7 @@ const WebSocketService = require('./service/WebSocketService');
 const ConversationAnalysisService = require('./service/ConversationAnalysisService');
 const AdsPowerRouter = require('./router/AdsPowerRouter');
 const videoRouter = require('./router/videoRouter');
+const messageRouter = require('./router/messageRouter');
 const dbManager = require('./Manager/DataBaseManager');
 require('dotenv').config();
 
@@ -36,6 +37,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/adsPower', AdsPowerRouter());
 app.use('/api/videos', videoRouter());
+app.use('/api/messages', messageRouter);
 
 app.get('/api/userinfo', async (req, res) => {
     const userInfos = await douyinUserService.GetAuthUserInfo();
