@@ -178,7 +178,7 @@ class AdsPowerService {
             const decodedBuffer = Buffer.from(responseData.body, 'base64');
             const jsonData = JSON.parse(decodedBuffer);
             for(const accountInfo of jsonData.data){
-                const uid = parseInt(accountInfo.uid);
+                const uid = BigInt(accountInfo.uid);
                 const nickname = accountInfo.nickname;
                 const models = await dbManager.getModels(this.profileId);
                 await models.IMUserInfo.sync();

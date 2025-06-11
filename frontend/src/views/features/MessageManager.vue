@@ -181,10 +181,11 @@ export default {
       this.replySending[conversationId] = true;
       
       try {
-        // 构建请求数据，包含guest相关信息
+        // 构建请求数据，包含guest相关信息和profileId
         const requestData = {
           text: replyContent,
           conversationId: conversationId,
+          profileId: this.currentUserId, // 添加profileId
           authHeaders: {
             'User-Agent': 'DouYin-App/1.0',
             'X-Profile-ID': this.currentUserId

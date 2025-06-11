@@ -4,7 +4,16 @@ const ConversationAnalysisService = require('../service/ConversationAnalysisServ
 const MessageService = require('../service/MessageService');
 
 // 创建MessageService实例
-const messageService = new MessageService();
+let messageService = new MessageService();
+
+// 设置seleniumService的方法
+function setSeleniumService(seleniumService) {
+    console.log('设置SeleniumService到MessageService');
+    messageService.setSeleniumService(seleniumService);
+}
+
+// 导出设置方法
+router.setSeleniumService = setSeleniumService;
 
 router.get('/conversation-analysis/results', async (req, res) => {
     try {
@@ -193,6 +202,23 @@ router.post('/send-mention', async (req, res) => {
         }
     } catch (error) {
         console.error('发送提及消息失败:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 测试seleniumService集成的端点
+router.get('/test-selenium', async (req, res) => {
+    try {
+        const hasSelenium = messageService.seleniumService !== null && messageService.seleniumService !== undefined;
+        
+        res.json({
+            status: 'success',
+            hasSeleniumService: hasSelenium,
+            message: hasSelenium ? 'SeleniumService已正确集成' : 'SeleniumService未集成',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('测试seleniumService失败:', error);
         res.status(500).json({ error: error.message });
     }
 });

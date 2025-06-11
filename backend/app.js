@@ -8,6 +8,7 @@ const AdsPowerRouter = require('./router/AdsPowerRouter');
 const videoRouter = require('./router/videoRouter');
 const messageRouter = require('./router/messageRouter');
 const dbManager = require('./Manager/DataBaseManager');
+const serviceManager = require('./Manager/ServiceManager');
 require('dotenv').config();
 
 // 配置日志
@@ -35,6 +36,28 @@ const webSocketService = new WebSocketService();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// 设置middleware来注入seleniumService到messageRouter
+app.use('/api/messages', (req, res, next) => {
+    // 从请求中获取profile_id（如果有的话）
+    const profile_id = req.body.profileId || req.query.profile_id || req.headers['x-profile-id'];
+    
+    if (profile_id) {
+        try {
+            // 获取对应的seleniumService
+            const service = serviceManager.getService(profile_id);
+            if (service && service.seleniumService) {
+                console.log(`为messageRouter设置SeleniumService，profileId: ${profile_id}`);
+                messageRouter.setSeleniumService(service.seleniumService);
+            }
+        } catch (error) {
+            console.log(`设置SeleniumService失败，profileId: ${profile_id}`, error.message);
+        }
+    }
+    
+    next();
+});
+
 app.use('/api/adsPower', AdsPowerRouter());
 app.use('/api/videos', videoRouter());
 app.use('/api/messages', messageRouter);

@@ -5,172 +5,122 @@ const Request = require('../Proto/Request/Request_pb');
 const Response = require('../Proto/Response/Response_pb');
 
 class MessageService {
-    constructor(authHeaders = {}) {
+    constructor(authHeaders = {}, seleniumService = null) {
         this.apiUrl = 'https://imapi.douyin.com/v1/message/send';
         this.authHeaders = authHeaders; // 可以传入认证头信息
+        this.seleniumService = seleniumService; // selenium服务实例
     }
 
     /**
      * 发送消息到抖音API
      * @param {string} messageContent - 要发送的消息内容
-     * @param {string} conversationId - 对话ID
+     * @param {string} conversationId - 对话ID (这里作为用户名称匹配)
      * @param {Object} options - 可选参数
      * @returns {Promise<Object>} - 返回响应结果
      */
     async sendMessage(messageContent, conversationId, options = {}) {
         try {
-            // 创建 SendMessageRequestBody
-            const sendMessageRequest = new SendMessageRequestBody.SendMessageRequestBody();
+            console.log(`MessageService发送消息: ${messageContent} 给 ${conversationId}`);
             
-            // 设置必要的字段
-            sendMessageRequest.setConversationId(conversationId);
-            sendMessageRequest.setContent(messageContent);
-            
-            // 设置可选字段，使用默认值或传入的值
-            sendMessageRequest.setConversationType(options.conversationType || 1); // 默认为1
-            sendMessageRequest.setConversationShortId(options.conversationShortId || 0);
-            sendMessageRequest.setMessageType(options.messageType || 1); // 默认为文本消息
-            sendMessageRequest.setTicket(options.ticket || '');
-            sendMessageRequest.setClientMessageId(
-                options.clientMessageId || this.generateClientMessageId()
-            );
-            sendMessageRequest.setIgnoreBadgeCount(options.ignoreBadgeCount || false);
-            
-            // 设置扩展字段
-            if (options.ext) {
-                const extMap = sendMessageRequest.getExtMap();
-                Object.keys(options.ext).forEach(key => {
-                    extMap.set(key, options.ext[key]);
-                });
+            // 如果有seleniumService，使用selenium方式发送
+            if (this.seleniumService) {
+                console.log('使用Selenium方式发送消息');
+                return await this.seleniumService.sendDirectMessage(conversationId, messageContent);
             }
             
-            // 设置提及用户列表
-            if (options.mentionedUsers && Array.isArray(options.mentionedUsers)) {
-                sendMessageRequest.setMentionedUsersList(options.mentionedUsers);
-            }
-
-            // 创建 RequestBody 并设置 SendMessageRequestBody
-            const requestBody = new RequestBody.RequestBody();
-            requestBody.setSendmessagerequestbody(sendMessageRequest);
-
-            // 创建 Request 对象
-            const request = new Request.Request();
-            request.setCmd(100); // 发送消息的命令号
-            request.setSequenceId(Date.now()); // 使用时间戳作为序列号
-            request.setSdkVersion('1.0.0');
-            request.setInboxType(1);
-            request.setBuildNumber('1.0.0');
-            request.setBody(requestBody);
-            request.setDeviceId(options.deviceId || 'web_device');
-            request.setChannel(options.channel || 'web');
-            request.setDevicePlatform(options.devicePlatform || 'web');
-            request.setDeviceType(options.deviceType || 'web');
-            request.setOsVersion(options.osVersion || '1.0');
-            request.setVersionCode(options.versionCode || '1.0.0');
-            request.setTimestamp(Date.now());
-
-            // 序列化为二进制数据
-            const binaryData = request.serializeBinary();
-
-            console.log('发送消息请求:', {
-                conversationId,
-                messageContent,
-                options,
-                binaryDataLength: binaryData.length,
-                cmd: 100,
-                sequenceId: request.getSequenceId()
-            });
-
-            // 发送POST请求
-            const response = await axios.post(this.apiUrl, binaryData, {
-                headers: {
-                    'Content-Type': 'application/x-protobuf',
-                    'Accept': 'application/x-protobuf',
-                    ...this.authHeaders
-                },
-                responseType: 'arraybuffer', // 接收二进制响应
-                timeout: 30000 // 30秒超时
-            });
-
-            // 解析二进制响应数据
-            const responseBuffer = Buffer.from(response.data);
+            // 否则使用原来的protobuf API方式（保留作为备用）
+            console.log('使用API方式发送消息');
+            return await this.sendMessageViaAPI(messageContent, conversationId, options);
             
-            try {
-                // 尝试解析 Response
-                const responseProto = Response.Response.deserializeBinary(responseBuffer);
-                
-                console.log('响应解析成功:', {
-                    cmd: responseProto.getCmd(),
-                    sequenceId: responseProto.getSequenceId(),
-                    statusCode: responseProto.getStatusCode(),
-                    errorDesc: responseProto.getErrorDesc(),
-                    logId: responseProto.getLogId()
-                });
-
-                // 检查响应状态
-                if (responseProto.getStatusCode() !== 0) {
-                    throw new Error(`发送消息失败: ${responseProto.getErrorDesc() || '未知错误'}`);
-                }
-
-                // 获取响应体
-                const responseBody = responseProto.getBody();
-                let sendMessageResponse = null;
-                
-                if (responseBody) {
-                    sendMessageResponse = responseBody.getSendMessageBody();
-                    
-                    if (sendMessageResponse) {
-                        console.log('发送消息响应详情:', {
-                            messageId: sendMessageResponse.getMessageId ? sendMessageResponse.getMessageId() : null,
-                            conversationId: sendMessageResponse.getConversationId ? sendMessageResponse.getConversationId() : null
-                        });
-                    }
-                }
-
-                return {
-                    success: true,
-                    status: response.status,
-                    data: {
-                        cmd: responseProto.getCmd(),
-                        sequenceId: responseProto.getSequenceId(),
-                        statusCode: responseProto.getStatusCode(),
-                        logId: responseProto.getLogId(),
-                        sendMessageResponse: sendMessageResponse
-                    },
-                    message: '消息发送成功'
-                };
-
-            } catch (parseError) {
-                console.error('响应解析失败:', parseError);
-                console.log('原始响应数据长度:', responseBuffer.length);
-                console.log('前100字节:', responseBuffer.slice(0, 100).toString('hex'));
-                
-                // 如果解析失败，返回原始响应
-                return {
-                    success: true,
-                    status: response.status,
-                    data: responseBuffer,
-                    message: '消息可能发送成功，但响应解析失败',
-                    warning: '无法解析响应格式'
-                };
-            }
-
         } catch (error) {
-            console.error('发送消息失败:', {
-                message: error.message,
-                status: error.response?.status,
-                statusText: error.response?.statusText,
-                conversationId,
-                messageContent
-            });
-
+            console.error('发送消息失败:', error);
             return {
                 success: false,
                 error: error.message,
-                status: error.response?.status,
-                message: '消息发送失败'
+                messageContent: messageContent,
+                conversationId: conversationId,
+                timestamp: new Date().toISOString()
             };
         }
+    }
+
+    /**
+     * 通过API发送消息（protobuf方式）
+     * @param {string} messageContent - 消息内容
+     * @param {string} conversationId - 对话ID
+     * @param {Object} options - 可选参数
+     * @returns {Promise<Object>} - 返回响应结果
+     */
+    async sendMessageViaAPI(messageContent, conversationId, options = {}) {
+        try {
+            // 创建SendMessageRequestBody
+            const sendMessageBody = new SendMessageRequestBody();
+            sendMessageBody.setText(messageContent);
+            sendMessageBody.setConversationId(conversationId);
+            sendMessageBody.setClientMessageId(this.generateClientMessageId());
+            sendMessageBody.setMessageType(options.messageType || 1); // 默认文本消息
+            sendMessageBody.setConversationType(options.conversationType || 1); // 默认私聊
+
+            // 如果有提及用户
+            if (options.mentionedUsers && Array.isArray(options.mentionedUsers)) {
+                sendMessageBody.setMentionedUsersList(options.mentionedUsers);
+            }
+
+            // 包装到RequestBody
+            const requestBody = new RequestBody();
+            requestBody.setSendMessage(sendMessageBody);
+
+            // 包装到Request
+            const request = new Request();
+            request.setCmd(100); // 发送消息命令
+            request.setSequenceId(Date.now());
+            request.setSdkVersion('1.0.0');
+            request.setDevice('web');
+            request.setOs('web');
+            request.setTimestamp(Date.now());
+            request.setRequestBody(requestBody);
+
+            // 序列化请求
+            const serializedData = request.serializeBinary();
+
+            // 发送请求
+            const response = await axios.post(this.apiUrl, serializedData, {
+                headers: {
+                    'Content-Type': 'application/x-protobuf',
+                    ...this.authHeaders
+                },
+                responseType: 'arraybuffer'
+            });
+
+            // 解析响应
+            const responseData = new Uint8Array(response.data);
+            const responseProto = Response.Response.deserializeBinary(responseData);
+
+            // 检查响应状态
+            if (responseProto.getStatusCode() === 0) {
+                const sendMessageResponse = responseProto.getResponseBody().getSendMessage();
+                return {
+                    success: true,
+                    message: '消息发送成功',
+                    messageId: sendMessageResponse ? sendMessageResponse.getMessageId() : null,
+                    timestamp: new Date().toISOString()
+                };
+            } else {
+                throw new Error(`API返回错误: ${responseProto.getMessage()}`);
+            }
+
+        } catch (error) {
+            console.error('API发送消息失败:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 设置selenium服务实例
+     * @param {Object} seleniumService - selenium服务实例
+     */
+    setSeleniumService(seleniumService) {
+        this.seleniumService = seleniumService;
     }
 
     /**
