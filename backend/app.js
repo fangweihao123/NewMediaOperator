@@ -113,6 +113,27 @@ app.get('/api/selenium/messages', async (req, res) => {
         const profile_id = req.query.profile_id;
         const models = await dbManager.getModels(profile_id);
         const messages = await models.ConversationInfo.findAll();
+        for(let message of messages){
+            const guest = message.guest;
+            const owner = message.owner;
+            const models = await dbManager.getModels(profile_id);
+            const imOwnerUserInfo = await models.IMUserInfo.findOne({
+                where: {
+                    user_id: owner
+                }
+            });
+            if(imOwnerUserInfo){
+                message.dataValues.owner_nickname = imOwnerUserInfo.nickname;
+            }
+            const imGuestUserInfo = await models.IMUserInfo.findOne({
+                where: {
+                    user_id: guest
+                }
+            });
+            if(imGuestUserInfo){
+                message.dataValues.guest_nickname = imGuestUserInfo.nickname;
+            }
+        }
         res.json({ status: 'success', messages });
     } catch (error) {
         console.error('获取私信信息失败:', error);

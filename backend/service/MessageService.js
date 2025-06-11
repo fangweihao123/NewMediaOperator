@@ -1,6 +1,8 @@
 const axios = require('axios');
 const SendMessageRequestBody = require('../Proto/Request/SendMessageRequestBody_pb');
 const RequestBody = require('../Proto/Request/RequestBody_pb');
+const Request = require('../Proto/Request/Request_pb');
+const Response = require('../Proto/Response/Response_pb');
 
 class MessageService {
     constructor(authHeaders = {}) {
@@ -51,14 +53,32 @@ class MessageService {
             const requestBody = new RequestBody.RequestBody();
             requestBody.setSendmessagerequestbody(sendMessageRequest);
 
+            // 创建 Request 对象
+            const request = new Request.Request();
+            request.setCmd(100); // 发送消息的命令号
+            request.setSequenceId(Date.now()); // 使用时间戳作为序列号
+            request.setSdkVersion('1.0.0');
+            request.setInboxType(1);
+            request.setBuildNumber('1.0.0');
+            request.setBody(requestBody);
+            request.setDeviceId(options.deviceId || 'web_device');
+            request.setChannel(options.channel || 'web');
+            request.setDevicePlatform(options.devicePlatform || 'web');
+            request.setDeviceType(options.deviceType || 'web');
+            request.setOsVersion(options.osVersion || '1.0');
+            request.setVersionCode(options.versionCode || '1.0.0');
+            request.setTimestamp(Date.now());
+
             // 序列化为二进制数据
-            const binaryData = requestBody.serializeBinary();
+            const binaryData = request.serializeBinary();
 
             console.log('发送消息请求:', {
                 conversationId,
                 messageContent,
                 options,
-                binaryDataLength: binaryData.length
+                binaryDataLength: binaryData.length,
+                cmd: 100,
+                sequenceId: request.getSequenceId()
             });
 
             // 发送POST请求
@@ -72,17 +92,68 @@ class MessageService {
                 timeout: 30000 // 30秒超时
             });
 
-            console.log('消息发送成功:', {
-                status: response.status,
-                responseLength: response.data.byteLength
-            });
+            // 解析二进制响应数据
+            const responseBuffer = Buffer.from(response.data);
+            
+            try {
+                // 尝试解析 Response
+                const responseProto = Response.Response.deserializeBinary(responseBuffer);
+                
+                console.log('响应解析成功:', {
+                    cmd: responseProto.getCmd(),
+                    sequenceId: responseProto.getSequenceId(),
+                    statusCode: responseProto.getStatusCode(),
+                    errorDesc: responseProto.getErrorDesc(),
+                    logId: responseProto.getLogId()
+                });
 
-            return {
-                success: true,
-                status: response.status,
-                data: response.data,
-                message: '消息发送成功'
-            };
+                // 检查响应状态
+                if (responseProto.getStatusCode() !== 0) {
+                    throw new Error(`发送消息失败: ${responseProto.getErrorDesc() || '未知错误'}`);
+                }
+
+                // 获取响应体
+                const responseBody = responseProto.getBody();
+                let sendMessageResponse = null;
+                
+                if (responseBody) {
+                    sendMessageResponse = responseBody.getSendMessageBody();
+                    
+                    if (sendMessageResponse) {
+                        console.log('发送消息响应详情:', {
+                            messageId: sendMessageResponse.getMessageId ? sendMessageResponse.getMessageId() : null,
+                            conversationId: sendMessageResponse.getConversationId ? sendMessageResponse.getConversationId() : null
+                        });
+                    }
+                }
+
+                return {
+                    success: true,
+                    status: response.status,
+                    data: {
+                        cmd: responseProto.getCmd(),
+                        sequenceId: responseProto.getSequenceId(),
+                        statusCode: responseProto.getStatusCode(),
+                        logId: responseProto.getLogId(),
+                        sendMessageResponse: sendMessageResponse
+                    },
+                    message: '消息发送成功'
+                };
+
+            } catch (parseError) {
+                console.error('响应解析失败:', parseError);
+                console.log('原始响应数据长度:', responseBuffer.length);
+                console.log('前100字节:', responseBuffer.slice(0, 100).toString('hex'));
+                
+                // 如果解析失败，返回原始响应
+                return {
+                    success: true,
+                    status: response.status,
+                    data: responseBuffer,
+                    message: '消息可能发送成功，但响应解析失败',
+                    warning: '无法解析响应格式'
+                };
+            }
 
         } catch (error) {
             console.error('发送消息失败:', {

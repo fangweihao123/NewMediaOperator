@@ -69,8 +69,24 @@ class DatabaseManager {
                     type: DataTypes.STRING(200),
                     primaryKey: true
                 },
+                owner: {
+                    type: DataTypes.BIGINT
+                },
+                guest: {
+                    type: DataTypes.BIGINT
+                },
                 conversation: {
                     type: DataTypes.STRING(200)
+                }
+            }),
+
+            IMUserInfo: sequelize.define('IMUserInfo', {
+                user_id: {
+                    type: DataTypes.BIGINT,
+                    primaryKey: true
+                },
+                nickname: {
+                    type: DataTypes.STRING(100)
                 }
             }),
 

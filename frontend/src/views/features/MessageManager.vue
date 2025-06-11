@@ -19,9 +19,12 @@
                   :title="getMessageTitle(message)"
                 >
                   <div class="message-content">
-                    <div class="message-id">会话ID: {{ message.conversation_id }}</div>
+                    <!-- 只有当guest_nickname存在时才显示会话信息 -->
+                    <div v-if="message.guest_nickname" class="message-id">
+                      昵称: {{ message.guest_nickname }}
+                    </div>
                     <div class="message-text" v-if="message.conversation">
-                      <div v-for="(msg, idx) in getMessageLines(message.conversation)" :key="idx" class="message-line">
+                      <div v-for="(msg, idx) in getFormattedMessageLines(message)" :key="idx" class="message-line">
                         {{ msg }}
                       </div>
                     </div>
@@ -33,7 +36,7 @@
                           v-model="replyInputs[message.conversation_id]"
                           placeholder="输入回复内容..."
                           :disabled="replySending[message.conversation_id]"
-                          @keydown.enter="sendReply(message.conversation_id)"
+                          @keydown.enter="sendReply(message.conversation_id, message.guest_nickname, message.guest)"
                           class="reply-input"
                         ></el-input>
                         <el-button 
@@ -41,7 +44,7 @@
                           size="small"
                           :loading="replySending[message.conversation_id]"
                           :disabled="!replyInputs[message.conversation_id] || replyInputs[message.conversation_id].trim() === ''"
-                          @click="sendReply(message.conversation_id)"
+                          @click="sendReply(message.conversation_id, message.guest_nickname, message.guest)"
                           class="reply-button"
                         >
                           {{ replySending[message.conversation_id] ? '发送中' : '回复' }}
@@ -111,19 +114,45 @@ export default {
       if (!conversation) return [];
       return conversation.split('\n').filter(line => line.trim());
     },
+    
+    // 格式化消息行，在每行前面加上guest_nickname
+    getFormattedMessageLines(message) {
+      if (!message.conversation) return [];
+      
+      const lines = this.getMessageLines(message.conversation);
+      
+      // 如果有guest_nickname，在每行消息前加上名称标识
+      if (message.guest_nickname && lines.length > 0) {
+        return lines.map(line => `${message.guest_nickname}: ${line}`);
+      }
+      
+      return lines;
+    },
+    
     getMessageTitle(message) {
-      if (!message.conversation) return `私信 ${message.conversation_id}`;
+      // 优先使用guest_nickname作为标题前缀，如果没有则使用"私信"
+      console.log('message', message);
+      const titlePrefix = message.guest_nickname ? message.guest_nickname : '私信';
+      
+      if (!message.conversation) {
+        return titlePrefix;
+      }
       
       // 获取最新的一条消息
       const messages = this.getMessageLines(message.conversation);
-      if (messages.length === 0) return `私信 ${message.conversation_id}`;
+      if (messages.length === 0) {
+        return titlePrefix;
+      }
       
       const lastMessage = messages[messages.length - 1];
       
       // 如果消息太长，截取前30个字符
       const preview = lastMessage.length > 30 ? lastMessage.substring(0, 30) + '...' : lastMessage;
       
-      return `${message.conversation_id} - ${preview}`;
+      // 如果有guest_nickname，在预览文本前也加上名称
+      const formattedPreview = message.guest_nickname ? `${message.guest_nickname}: ${preview}` : preview;
+      
+      return `${titlePrefix} - ${formattedPreview}`;
     },
     
     async getStrangerMessages(profile_id) {
@@ -141,8 +170,8 @@ export default {
       }
     },
     
-    // 发送回复
-    async sendReply(conversationId) {
+    // 发送回复 - 添加guest_nickname和guest参数
+    async sendReply(conversationId, guestNickname = null, guest = null) {
       const replyContent = this.replyInputs[conversationId];
       if (!replyContent || replyContent.trim() === '') {
         this.$message.warning('请输入回复内容');
@@ -152,17 +181,33 @@ export default {
       this.replySending[conversationId] = true;
       
       try {
-        const response = await api.post('/messages/send-text', {
+        // 构建请求数据，包含guest相关信息
+        const requestData = {
           text: replyContent,
           conversationId: conversationId,
           authHeaders: {
             'User-Agent': 'DouYin-App/1.0',
             'X-Profile-ID': this.currentUserId
           }
-        });
+        };
+        
+        // 如果有guest信息，添加到请求中
+        if (guestNickname) {
+          requestData.guest_nickname = guestNickname;
+        }
+        if (guest) {
+          requestData.guest = guest;
+        }
+        
+        console.log('发送回复请求数据:', requestData);
+        
+        const response = await api.post('/messages/send-text', requestData);
         
         if (response.data.status === 'success') {
-          this.$message.success(`回复发送成功`);
+          const successMessage = guestNickname 
+            ? `回复 ${guestNickname} 发送成功` 
+            : '回复发送成功';
+          this.$message.success(successMessage);
           // 清空输入框
           this.replyInputs[conversationId] = '';
         } else {

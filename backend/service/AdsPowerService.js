@@ -78,6 +78,128 @@ class AdsPowerService {
         return browserList;
     }
 
+    async parseVideoList(responseData){
+        let jsonData;
+        if(responseData.base64Encoded) {
+            const decodedBody = Buffer.from(responseData.body, 'base64').toString('utf-8');
+            jsonData = JSON.parse(decodedBody);
+            console.log('视频列表 base64 ', jsonData);
+            if (jsonData.aweme_list) {
+                for (const video of jsonData.aweme_list) {
+                    const videoData = {
+                        title: video.item_title,
+                        description: video.desc
+                    };
+                    const models = await dbManager.getModels(this.profileId);
+                    await models.VideoListInfo.sync();
+                    const existingVideo = await models.VideoListInfo.findOne({
+                        where: {
+                            title: videoData.title,
+                        }
+                    });
+
+                    if (!existingVideo) {
+                        await models.VideoListInfo.create(videoData);
+                        console.log('Saved new video:', videoData.title);
+                    }
+                }
+            }
+        }else{
+            jsonData = JSON.parse(responseData.body);
+            console.log('normal ', jsonData);
+        }
+    }
+
+    async parseMessageList(responseData){
+        if(responseData.base64Encoded) {
+            const decodedBuffer = Buffer.from(responseData.body, 'base64');
+            const protoParseService = new ProtoParseService();
+            const parsedMessage = await protoParseService.parseProtobufMessage(decodedBuffer);
+            console.log('初始聊天列表:', parsedMessage);
+            const messageLists = parsedMessage.body.messageByInit.messagesList;
+            for (const message of messageLists) {
+                const conversationInfo = message.conversations;
+                const firstpageParticipant = conversationInfo.firstpageparticipant;
+                const guest = firstpageParticipant.participantsList[0].userId;
+                const owner = firstpageParticipant.participantsList[1].userId;
+                const messageListContent = message.messagesList;
+                let cnt = 1;
+                let conversation = '';
+                for (let i = 0; i <= messageListContent.length - 1; i++) {
+                    try {
+                        const messageContent = JSON.parse(messageListContent[i].content);
+                        if (messageContent.aweType === 700 || messageContent.aweType === 0) {
+                            if(cnt <= 3 && messageContent.text && messageContent.text.trim()){
+                                conversation += messageContent.text;
+                                conversation += '\n';
+                                cnt++;
+                            }
+                        }
+                    } catch (error) {
+                        // If content is not valid JSON, skip it
+                        continue;
+                    }
+                }
+                // 保存会话信息到数据库
+                try {
+                    const models = await dbManager.getModels(this.profileId);
+                    const existingConversation = await models.ConversationInfo.findOne({
+                        where: {
+                            conversation_id: conversationInfo.conversationId
+                        }
+                    });
+
+                    if(conversation.length > 0){
+                        if (existingConversation) {
+                            existingConversation.conversation = conversation;
+                            await existingConversation.save();
+                        } else {
+                            const conversationData = {
+                                conversation_id: conversationInfo.conversationId,
+                                owner: owner,
+                                guest: guest,
+                                conversation: conversation
+                            };
+                            await models.ConversationInfo.create(conversationData);
+                        }
+                    }
+                } catch (error) {
+                    console.error('保存会话信息失败:', error);
+                }
+            }
+        } else {
+            const jsonData = JSON.parse(responseData.body);
+            console.log('normal ', jsonData);
+        }
+    }
+
+    async parseIMUserInfo(responseData){
+        if(responseData.base64Encoded) {
+            const decodedBuffer = Buffer.from(responseData.body, 'base64');
+            const jsonData = JSON.parse(decodedBuffer);
+            for(const accountInfo of jsonData.data){
+                const uid = parseInt(accountInfo.uid);
+                const nickname = accountInfo.nickname;
+                const models = await dbManager.getModels(this.profileId);
+                await models.IMUserInfo.sync();
+                const existingUser = await models.IMUserInfo.findOne({
+                    where: {
+                        user_id: uid
+                    }
+                });
+                if(!existingUser){
+                    await models.IMUserInfo.create({
+                        user_id: uid,
+                        nickname: nickname
+                    });
+                }else{
+                    existingUser.nickname = nickname;
+                    await existingUser.save();
+                }
+            }
+        }
+        
+    }
 
     async bindHookToFetchRequest(){
         try{
@@ -88,94 +210,16 @@ class AdsPowerService {
             Fetch.requestPaused(async ({requestId, request, frameId, resourseType}) => {
                 if (request.url.includes('https://creator.douyin.com/janus/douyin/creator/pc/work_list')) {
                     const responseData = await Fetch.getResponseBody({requestId});
-                    let jsonData;
-                    if(responseData.base64Encoded) {
-                        const decodedBody = Buffer.from(responseData.body, 'base64').toString('utf-8');
-                        jsonData = JSON.parse(decodedBody);
-                        console.log('视频列表 base64 ', jsonData);
-                        if (jsonData.aweme_list) {
-                            for (const video of jsonData.aweme_list) {
-                                const videoData = {
-                                    title: video.item_title,
-                                    description: video.desc
-                                };
-                                const models = await dbManager.getModels(this.profileId);
-                                await models.VideoListInfo.sync();
-                                const existingVideo = await models.VideoListInfo.findOne({
-                                    where: {
-                                        title: videoData.title,
-                                    }
-                                });
-
-                                if (!existingVideo) {
-                                    await models.VideoListInfo.create(videoData);
-                                    console.log('Saved new video:', videoData.title);
-                                }
-                            }
-                        }
-                    }else{
-                        jsonData = JSON.parse(responseData.body);
-                        console.log('normal ', jsonData);
-                    }
+                    await this.parseVideoList(responseData);
+                }
+                if (request.url.includes('https://www.douyin.com/aweme/v1/web/im/user/info')) {
+                    const responseData = await Fetch.getResponseBody({requestId});
+                    await this.parseIMUserInfo(responseData);
                 }
                 if (request.url.includes('https://imapi.douyin.com/v1/message/get_message_by_init')) {
                     const responseData = await Fetch.getResponseBody({requestId});
                     if(request.headers.Accept.includes('protobuf')) {
-                        if(responseData.base64Encoded) {
-                            const decodedBuffer = Buffer.from(responseData.body, 'base64');
-                            const protoParseService = new ProtoParseService();
-                            const parsedMessage = await protoParseService.parseProtobufMessage(decodedBuffer);
-                            console.log('初始聊天列表:', parsedMessage);
-                            const messageLists = parsedMessage.body.messageByInit.messagesList;
-                            for (const message of messageLists) {
-                                const conversationInfo = message.conversations;
-                                const messageListContent = message.messagesList;
-                                let cnt = 1;
-                                let conversation = '';
-                                for (let i = messageListContent.length - 1; i >= 0; i--) {
-                                    try {
-                                        const messageContent = JSON.parse(messageListContent[i].content);
-                                        if (messageContent.aweType === 700 || messageContent.aweType === 0) {
-                                            if(cnt <= 3 && messageContent.text && messageContent.text.trim()){
-                                                conversation += messageContent.text;
-                                                conversation += '\n';
-                                                cnt++;
-                                            }
-                                        }
-                                    } catch (error) {
-                                        // If content is not valid JSON, skip it
-                                        continue;
-                                    }
-                                }
-                                // 保存会话信息到数据库
-                                try {
-                                    const models = await dbManager.getModels(this.profileId);
-                                    const existingConversation = await models.ConversationInfo.findOne({
-                                        where: {
-                                            conversation_id: conversationInfo.conversationId
-                                        }
-                                    });
-
-                                    if(conversation.length > 0){
-                                        if (existingConversation) {
-                                            existingConversation.conversation = conversation;
-                                            await existingConversation.save();
-                                        } else {
-                                            const conversationData = {
-                                                conversation_id: conversationInfo.conversationId,
-                                                conversation: conversation
-                                            };
-                                            await models.ConversationInfo.create(conversationData);
-                                        }
-                                    }
-                                } catch (error) {
-                                    console.error('保存会话信息失败:', error);
-                                }
-                            }
-                        } else {
-                            const jsonData = JSON.parse(responseData.body);
-                            console.log('normal ', jsonData);
-                        }
+                        await this.parseMessageList(responseData);
                     }
                 }
                 //console.log('requestId', requestId);
