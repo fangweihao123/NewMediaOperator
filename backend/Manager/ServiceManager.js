@@ -1,7 +1,6 @@
 const AdsPowerService = require('../service/AdsPowerService');
 const TaskScheduleService = require('../service/TaskScheduleService');
 const SeleniumService = require('../service/SeleniumService');
-
 class ServiceManager {
     constructor() {
         this.serviceMap = new Map();
@@ -23,7 +22,6 @@ class ServiceManager {
         const taskScheduleService = new TaskScheduleService(taskManagerOptions);
         
         const seleniumService = new SeleniumService(adsPowerService);
-
         const Service = {
             adsPowerService: adsPowerService,
             taskScheduleService: taskScheduleService,

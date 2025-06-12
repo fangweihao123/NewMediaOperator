@@ -185,11 +185,7 @@ export default {
         const requestData = {
           text: replyContent,
           conversationId: conversationId,
-          profileId: this.currentUserId, // 添加profileId
-          authHeaders: {
-            'User-Agent': 'DouYin-App/1.0',
-            'X-Profile-ID': this.currentUserId
-          }
+          profileId: this.currentUserId,
         };
         
         // 如果有guest信息，添加到请求中

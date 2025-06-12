@@ -1,22 +1,10 @@
 const { Builder, By, ServiceBuilder, until} = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
-const CDP = require('chrome-remote-interface');
+const { Key } = require('selenium-webdriver');
 
 class SeleniumService {
     constructor(adsPowerService) {
         this.videoInfoRefreshHandler = null;
         this.adsPowerService = adsPowerService;
-    }
-
-    
-    async getVideoList() {
-        try {
-            const result = await this.videoListInfo.findAll();
-            return result;
-        } catch (error) {
-            console.error('获取视频列表失败:', error);
-            throw error;
-        }
     }
 
     // 获取视频信息
@@ -127,178 +115,59 @@ class SeleniumService {
         try {
             console.log(`开始发送私信给: ${conversationId}`);
             console.log(`消息内容: ${messageContent}`);
-
             if (!this.adsPowerService.driver) {
                 throw new Error('Selenium driver未初始化');
             }
-
-            // 等待页面加载完成
-            await this.adsPowerService.driver.wait(
-                until.elementLocated(By.id('island_b69f5')), 
+            await this.adsPowerService.driver.get('https://www.douyin.com/user/self?from_tab_name=main');
+            // Find and click the element using the specified xpath
+            const element = await this.adsPowerService.driver.wait(
+                until.elementLocated(By.xpath('/html/body/div[2]/div[1]/div[4]/div[1]/div[1]/header/div/div/div[2]/div/pace-island/div/ul[2]/div/li/div/div/div[1]/p')),
                 10000
             );
-
-            // 获取所有对话项的基础xpath
-            const conversationListXpath = '//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li';
-            
-            // 查找所有对话项
-            const conversationElements = await this.adsPowerService.driver.findElements(
-                By.xpath(conversationListXpath)
-            );
-
-            console.log(`找到 ${conversationElements.length} 个对话项`);
-
-            let targetConversationIndex = -1;
-            let matchedUserName = '';
-
-            // 遍历所有对话项，查找匹配的用户名
-            for (let i = 0; i < conversationElements.length; i++) {
-                try {
-                    // 构建当前对话项的用户名xpath
-                    const userNameXpath = `${conversationListXpath}[${i + 1}]/div[1]/div[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/span[1]`;
-                    
-                    const userNameElement = await this.adsPowerService.driver.findElement(
-                        By.xpath(userNameXpath)
-                    );
-                    
-                    const userName = await userNameElement.getText();
-                    console.log(`检查用户名: ${userName}`);
-
-                    // 检查是否匹配conversationId (支持部分匹配)
-                    if (userName && (userName.includes(conversationId) || conversationId.includes(userName))) {
-                        targetConversationIndex = i + 1; // xpath是从1开始计数
-                        matchedUserName = userName;
-                        console.log(`找到匹配用户: ${userName} (索引: ${targetConversationIndex})`);
-                        break;
-                    }
-                } catch (err) {
-                    console.log(`获取第${i + 1}个对话项用户名失败:`, err.message);
-                }
-            }
-
-            if (targetConversationIndex === -1) {
-                throw new Error(`未找到匹配的用户: ${conversationId}`);
-            }
-
-            // 构建对应的输入框xpath
-            const inputXpath = `//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li[${targetConversationIndex}]/div[1]/div[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[3]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]`;
-
-            // 尝试多个可能的输入框xpath模式
-            const inputXpaths = [
-                inputXpath,
-                `//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li[${targetConversationIndex}]//input`,
-                `//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li[${targetConversationIndex}]//textarea`,
-                `//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li[${targetConversationIndex}]//div[contains(@contenteditable, "true")]`,
-                `//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li[${targetConversationIndex}]//div[@role="textbox"]`
-            ];
-
-            let inputElement = null;
-
-            // 尝试找到输入框
-            for (const xpath of inputXpaths) {
-                try {
-                    inputElement = await this.adsPowerService.driver.findElement(By.xpath(xpath));
-                    if (inputElement) {
-                        console.log(`找到输入框，使用xpath: ${xpath}`);
-                        break;
-                    }
-                } catch (err) {
-                    console.log(`尝试输入框xpath失败: ${xpath}`);
-                }
-            }
-
-            if (!inputElement) {
-                throw new Error('未找到输入框元素');
-            }
-
-            // 滚动到输入框位置
-            await this.adsPowerService.driver.executeScript(
-                "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", 
-                inputElement
-            );
-
-            // 等待一下确保滚动完成
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // 点击输入框以确保焦点
-            await inputElement.click();
-
-            // 清空并输入消息内容
-            await inputElement.clear();
-            await inputElement.sendKeys(messageContent);
-
-            console.log(`消息已输入到输入框`);
-
-            // 等待一下确保输入完成
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // 构建发送按钮xpath
-            const sendButtonXpath = `//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li[${targetConversationIndex}]/div[1]/div[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[3]/div[1]/div[2]/div[1]/div[2]/div[1]/span[3]/svg[1]/path[1]`;
-
-            // 尝试多个可能的发送按钮xpath
-            const sendButtonXpaths = [
-                sendButtonXpath,
-                `//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li[${targetConversationIndex}]//span[3]/svg[1]`,
-                `//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li[${targetConversationIndex}]//span[3]`,
-                `//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li[${targetConversationIndex}]//button[contains(@aria-label, "发送")]`,
-                `//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li[${targetConversationIndex}]//svg`,
-                `//div[@id="island_b69f5"]/div[1]/ul[2]/div[1]/li[${targetConversationIndex}]//path[contains(@d, "M")]`
-            ];
-
-            let sendButton = null;
-
-            // 尝试找到发送按钮
-            for (const xpath of sendButtonXpaths) {
-                try {
-                    sendButton = await this.adsPowerService.driver.findElement(By.xpath(xpath));
-                    if (sendButton) {
-                        console.log(`找到发送按钮，使用xpath: ${xpath}`);
-                        break;
-                    }
-                } catch (err) {
-                    console.log(`尝试发送按钮xpath失败: ${xpath}`);
-                }
-            }
-
-            if (!sendButton) {
-                throw new Error('未找到发送按钮');
-            }
-
-            // 滚动到发送按钮位置
-            await this.adsPowerService.driver.executeScript(
-                "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", 
-                sendButton
-            );
-
-            // 等待一下确保滚动完成
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // 点击发送按钮
-            await sendButton.click();
-
-            console.log(`消息发送成功给用户: ${matchedUserName}`);
-
-            // 等待发送完成
+            await element.click();
+            // 等待消息列表加载
             await new Promise(resolve => setTimeout(resolve, 2000));
-
-            return {
-                success: true,
-                message: '消息发送成功',
-                targetUser: matchedUserName,
-                messageContent: messageContent,
-                conversationIndex: targetConversationIndex,
-                timestamp: new Date().toISOString()
-            };
-
+            // 获取所有消息元素
+            const messageElements = await this.adsPowerService.driver.findElements(
+                By.xpath('/html/body/div[2]/div[1]/div[4]/div[1]/div[1]/header/div/div/div[2]/div/pace-island/div/ul[2]/div/li/div/div/div[3]/div/div/div[1]/div/div[2]/div[1]/div')
+            );
+            console.log(`找到 ${messageElements.length} 条消息`);
+            // 遍历所有消息元素
+            for (const messageElement of messageElements) {
+                try {
+                    // 获取消息内容
+                    const nickname = await messageElement.getText();
+                    if(nickname.includes(conversationId)){
+                        console.log('找到用户:', conversationId);
+                        await messageElement.click();
+                        // 等待输入框加载
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // 定位并点击输入框
+                        const inputBox = await this.adsPowerService.driver.wait(
+                            until.elementLocated(By.xpath('/html/body/div[2]/div[1]/div[4]/div[1]/div[1]/header/div/div/div[2]/div/pace-island/div/ul[2]/div/li/div/div/div[3]/div/div/div[2]/div/div[3]/div/div[2]/div[1]/div[1]/div/div/div[2]/div/div/div/div')),
+                            10000
+                        );
+                        
+                        // 输入消息内容
+                        await inputBox.sendKeys(messageContent);
+                        
+                        // 等待一下确保消息输入完成
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        
+                        // 模拟按下回车键发送消息
+                        await inputBox.sendKeys(Key.RETURN);
+                        
+                        // 等待消息发送完成
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        break;
+                    }
+                } catch (err) {
+                    console.error('获取消息内容失败:', err.message);
+                }
+            }
         } catch (error) {
             console.error('发送私信失败:', error);
-            return {
-                success: false,
-                error: error.message,
-                messageContent: messageContent,
-                conversationId: conversationId,
-                timestamp: new Date().toISOString()
-            };
         }
     }
 }
