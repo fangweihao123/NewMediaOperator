@@ -105,6 +105,57 @@ class SeleniumService {
         }
     }
 
+    async commentVideo(title, description, comment_content){
+        try{
+            if(this.adsPowerService.driver){
+                await this.adsPowerService.driver.get('https://www.douyin.com/user/self?from_tab_name=main');
+                // Wait for page to load
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                const videoElements = await this.adsPowerService.driver.findElements(
+                    By.xpath('/html/body/div[2]/div[1]/div[4]/div[2]/div/div/div/div[3]/div/div/div[2]/div/div[2]/ul/li')
+                );
+                console.log('找到视频作品数量', videoElements.length);
+                // 遍历所有消息元素
+                for (const videoElement of videoElements) {
+                    // 获取消息内容
+                    const videoname = await videoElement.getText();
+                    if(videoname.includes(title) && videoname.includes(description)){
+                        await videoElement.click();
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        // 定位并点击输入框
+                        const commentSection = await this.adsPowerService.driver.wait(
+                            until.elementLocated(By.xpath('/html/body/div[2]/div[1]/div[4]/div[3]/div/div[3]/div[1]/div[1]/div/div[1]/div/div[1]/div/div/div[1]/div/div[3]/div[1]/div[2]')),
+                            10000
+                        );
+                        await commentSection.click();
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        const commentInput = await this.adsPowerService.driver.wait(
+                            until.elementLocated(By.xpath('/html/body/div[2]/div[1]/div[4]/div[3]/div/div[3]/div[1]/div[1]/div/div[1]/div/div[2]/div/div/div[3]/div/div/div[4]/div[2]/div/div[1]/span')),
+                            10000
+                        );
+                        await commentInput.click();
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        const actualCommentInput = await this.adsPowerService.driver.wait(
+                            until.elementLocated(By.xpath('/html/body/div[2]/div[1]/div[4]/div[3]/div/div[3]/div[1]/div[1]/div/div[1]/div/div[2]/div/div/div[3]/div/div/div[4]/div[2]/div/div[1]/div/div/div[2]/div/div/div/div')),
+                            10000
+                        );
+                        
+                        await actualCommentInput.sendKeys(comment_content);
+                        // 模拟按下回车键发送消息
+                        await actualCommentInput.sendKeys(Key.RETURN);
+                        
+                        // 等待消息发送完成
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        break;
+                    }
+                }
+            }
+        }catch(error){
+            console.error('评论视频失败:', error);
+            throw error;
+        }
+    }
+
     /**
      * 发送私信消息
      * @param {string} conversationId - 对话ID（用户名称）

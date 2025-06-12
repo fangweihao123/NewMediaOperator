@@ -45,6 +45,9 @@
             <el-form-item label="视频描述">
               <el-input v-model="uploadForm.description" placeholder="请输入视频描述"></el-input>
             </el-form-item>
+            <el-form-item label="首评内容">
+              <el-input v-model="uploadForm.comment_content" placeholder="请输入首评内容"></el-input>
+            </el-form-item>
             <el-form-item label="视频路径">
               <el-input 
                 v-model="uploadForm.path" 
@@ -150,7 +153,8 @@ export default {
         path: '',
         scheduled: false,
         scheduledTime: null,
-        timeTemplate: ''
+        timeTemplate: '',
+        comment_content: ''
       },
       generateAIVideoForm: {
         bgm: '',
@@ -272,6 +276,7 @@ export default {
       this.uploadForm = {
         title: '',
         description: '',
+        comment_content: '',
         path: '',
         scheduled: false,
         scheduledTime: null,
@@ -298,6 +303,7 @@ export default {
           profileId: this.currentUserId,
           title: this.uploadForm.title,
           description: this.uploadForm.description,
+          comment_content: this.uploadForm.comment_content,
           video: this.uploadForm.path,
           scheduled: this.uploadForm.scheduled,
           scheduledTime: this.uploadForm.scheduledTime
