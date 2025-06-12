@@ -2,7 +2,7 @@ const { Builder} = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const CDP = require('chrome-remote-interface');
 const dbManager = require('../Manager/DataBaseManager')
-const ProtoParseService = require('./protoParseService');
+const ProtoParseService = require('./ProtoParseService');
 
 
 class AdsPowerService {

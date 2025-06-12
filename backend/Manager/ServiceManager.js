@@ -1,6 +1,6 @@
 const AdsPowerService = require('../service/AdsPowerService');
 const TaskScheduleService = require('../service/TaskScheduleService');
-const SeleniumService = require('../service/seleniumService');
+const SeleniumService = require('../service/SeleniumService');
 
 class ServiceManager {
     constructor() {

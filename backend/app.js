@@ -5,8 +5,8 @@ const winston = require('winston');
 const WebSocketService = require('./service/WebSocketService');
 const ConversationAnalysisService = require('./service/ConversationAnalysisService');
 const AdsPowerRouter = require('./router/AdsPowerRouter');
-const videoRouter = require('./router/videoRouter');
-const messageRouter = require('./router/messageRouter');
+const VideoRouter = require('./router/VideoRouter');
+const MessageRouter = require('./router/MessageRouter');
 const dbManager = require('./Manager/DataBaseManager');
 const serviceManager = require('./Manager/ServiceManager');
 require('dotenv').config();
@@ -59,8 +59,8 @@ app.use('/api/messages', (req, res, next) => {
 });
 
 app.use('/api/adsPower', AdsPowerRouter());
-app.use('/api/videos', videoRouter());
-app.use('/api/messages', messageRouter);
+app.use('/api/videos', VideoRouter());
+app.use('/api/messages', MessageRouter());
 
 app.get('/api/userinfo', async (req, res) => {
     const userInfos = await douyinUserService.GetAuthUserInfo();
