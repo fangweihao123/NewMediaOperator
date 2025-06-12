@@ -2,7 +2,6 @@ const { default: Client, OauthAccessTokenRequest } = require('@open-dy/open_api_
 const express = require('express');
 const cors = require('cors');
 const winston = require('winston');
-const WebSocketService = require('./service/WebSocketService');
 const ConversationAnalysisService = require('./service/ConversationAnalysisService');
 const AdsPowerRouter = require('./router/AdsPowerRouter');
 const VideoRouter = require('./router/VideoRouter');
@@ -30,8 +29,6 @@ const DOUYIN_CLIENT_KEY = process.env.DOUYIN_CLIENT_KEY || 'aw48uuo6r8xm48xb';
 const DOUYIN_CLIENT_SECRET = process.env.DOUYIN_CLIENT_SECRET || '7ef22bcf82420090464ee81c7f1e0651';
 const DOUYIN_REDIRECT_URI = 'https://418e-116-148-240-41.ngrok-free.app/auth-success';
 const DOUYIN_SCOPES = 'trial.whitelist,user_info,video.list.bind';
-
-const webSocketService = new WebSocketService();
 
 const app = express();
 app.use(cors());
@@ -251,8 +248,6 @@ const PORT = process.env.PORT || 5001;
 app.listen(PORT, '0.0.0.0', async () => {
     console.log(`Starting Express application...`);
     logger.info(`Server is running on port ${PORT}`);
-    //webSocketService.connect();
-    
     // 自动启动对话分析服务
     try {
         await ConversationAnalysisService.start();
