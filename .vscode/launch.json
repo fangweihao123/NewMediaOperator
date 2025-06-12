@@ -29,6 +29,28 @@
             "osx": {
                 "program": "${workspaceFolder}/backend/app.js"
             }
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Frontend (Windows)",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/frontend",
+            "windows": {
+                "runtimeExecutable": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+            },
+            "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-userdatadir"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Frontend (Mac)",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/frontend",
+            "osx": {
+                "runtimeExecutable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+            },
+            "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-userdatadir"
         }
     ]
 }
