@@ -92,6 +92,10 @@ class AdsPowerService {
                     };
                     const models = await dbManager.getModels(this.profileId);
                     await models.VideoListInfo.sync();
+                    await models.VideoListInfo.destroy({
+                        where: {},
+                        truncate: true
+                    });
                     const existingVideo = await models.VideoListInfo.findOne({
                         where: {
                             title: videoData.title,
@@ -102,6 +106,7 @@ class AdsPowerService {
                         await models.VideoListInfo.create(videoData);
                         console.log('Saved new video:', videoData.title);
                     }
+                    await models.VideoListInfo.sync();
                 }
             }
         }else{

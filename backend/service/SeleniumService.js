@@ -80,7 +80,7 @@ class SeleniumService {
                 await new Promise(resolve => setTimeout(resolve, 3000));
 
                 // Find all video cards
-                const videoCards = await this.adsPowerService.driver.findElements(By.xpath("//*[@id='root']/DIV[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV"));
+                const videoCards = await this.adsPowerService.driver.findElements(By.xpath("/html/body/div[1]/div[1]/div/div[2]/div/div/div/div[2]/div/div/div/div[2]/div[2]/div[1]/div"));
 
                 // Loop through cards to find matching title
                 for (const card of videoCards) {

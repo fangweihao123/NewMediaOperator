@@ -193,6 +193,7 @@ export default {
           }
         });
         this.videos = response.data.videos;
+        console.log("videos", this.videos);
       } catch (error) {
         this.$message.error('获取视频信息失败: ' + error.message);
       }

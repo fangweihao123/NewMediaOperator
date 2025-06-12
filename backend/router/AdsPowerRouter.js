@@ -12,8 +12,7 @@ module.exports = () => {
             serviceManager.InitService(profileId);
             const service = serviceManager.getService(profileId);
             service.adsPowerService.connectToAdsPower();
-            //TODO:
-            //service.seleniumService.fetchVideoInfoTimer(service.taskScheduleService);
+            service.seleniumService.fetchVideoInfoTimer(service.taskScheduleService);
             res.json({ status: 'success', message: '连接成功' });
         } catch (error) {
             console.error('连接失败:', error);
