@@ -86,14 +86,6 @@ export default {
       }
       
     },
-    async RedirectTODouyinAuthPage() {
-      try {
-        const response = await api.get('/auth')
-        window.location.href = response.data.authUrl;
-      } catch (error) {
-        this.$message.error('跳转失败', error);
-      }
-    },
     switchAccount(account) {
       this.accountInfo = account;
     },

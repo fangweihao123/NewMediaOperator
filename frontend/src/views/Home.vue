@@ -29,8 +29,7 @@
 </template>
 
 <script>
-import {ArrowDown, Plus, User, VideoCamera, Message} from '@element-plus/icons-vue'
-import api from '../api/config'
+import {User, VideoCamera, Message} from '@element-plus/icons-vue'
 import AccountManager from './features/AccountManager.vue'
 import VideoManager from './features/VideoManager.vue'
 import MessageManager from './features/MessageManager.vue'

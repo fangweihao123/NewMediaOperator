@@ -126,10 +126,9 @@
 </template> 
 
 <script>
-import { watch } from 'vue'
 import api from '../../api/config'
 import { UploadFilled, InfoFilled } from '@element-plus/icons-vue'
-import { inject, computed} from 'vue'
+import { inject} from 'vue'
 import axios from 'axios';
 
 export default {
