@@ -50,6 +50,7 @@ class AdsPowerService {
                 .setChromeService(service)
                 .build();
             this.debugPort = debugPort;
+            await this.bindHookToFetchRequest();
             this.driver.get('https://www.douyin.com/user/self?from_tab_name=main&showTab=post');
             return true;
         } catch (error) {
@@ -94,10 +95,6 @@ class AdsPowerService {
                     };
                     const models = await dbManager.getModels(this.profileId);
                     await models.VideoListInfo.sync();
-                    await models.VideoListInfo.destroy({
-                        where: {},
-                        truncate: true
-                    });
                     const existingVideo = await models.VideoListInfo.findOne({
                         where: {
                             title: videoData.title,

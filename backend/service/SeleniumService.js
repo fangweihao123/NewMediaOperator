@@ -26,7 +26,6 @@ class SeleniumService {
             this.videoInfoRefreshHandler = setInterval(async () => {
                 taskManager.addTask(async () => {
                     if (this.adsPowerService.driver) {
-                        await this.adsPowerService.bindHookToFetchRequest();
                         await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
                     }
                     console.log('Successfully fetched video info');
