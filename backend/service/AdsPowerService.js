@@ -213,6 +213,7 @@ class AdsPowerService {
             const protocol = await CDP({ port: this.debugPort });
             const { Runtime, Network, Fetch } = protocol;
             Fetch.requestPaused(async ({requestId, request, frameId, resourseType}) => {
+                console.log("requestURL", request);
                 if (request.url.includes('https://creator.douyin.com/janus/douyin/creator/pc/work_list')) {
                     const responseData = await Fetch.getResponseBody({requestId});
                     await this.parseVideoList(responseData);
@@ -231,7 +232,10 @@ class AdsPowerService {
                 Fetch.continueRequest({requestId});
             });
             Fetch.enable({
-                patterns: [{requestStage:'Response'}]
+                patterns: [{urlPattern: 'https://creator.douyin.com/janus/douyin/creator/pc/work_list*', requestStage:'Response'},
+                            {urlPattern: 'https://www.douyin.com/aweme/v1/web/im/user/info*', requestStage:'Response'},
+                            {urlPattern: 'https://imapi.douyin.com/v1/message/get_message_by_init*', requestStage:'Response'}
+                ]
             });
         }catch(error){
             console.error('bindHookToFetchRequest failed:', error);

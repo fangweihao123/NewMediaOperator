@@ -197,6 +197,7 @@ export default {
       } catch (error) {
         this.$message.error('获取视频信息失败: ' + error.message);
       }
+      console.log("bind again");
     },
     showGenerateAIVideoDialog() {
       this.generateAIVideoDialogVisible = true;
