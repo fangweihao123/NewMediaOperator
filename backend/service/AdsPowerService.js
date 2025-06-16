@@ -86,7 +86,6 @@ class AdsPowerService {
         if(responseData.base64Encoded) {
             const decodedBody = Buffer.from(responseData.body, 'base64').toString('utf-8');
             jsonData = JSON.parse(decodedBody);
-            console.log('视频列表 base64 ', jsonData);
             if (jsonData.aweme_list) {
                 for (const video of jsonData.aweme_list) {
                     const videoData = {
@@ -103,7 +102,6 @@ class AdsPowerService {
 
                     if (!existingVideo) {
                         await models.VideoListInfo.create(videoData);
-                        console.log('Saved new video:', videoData.title);
                     }
                     await models.VideoListInfo.sync();
                 }
@@ -119,7 +117,6 @@ class AdsPowerService {
             const decodedBuffer = Buffer.from(responseData.body, 'base64');
             const protoParseService = new ProtoParseService();
             const parsedMessage = await protoParseService.parseProtobufMessage(decodedBuffer);
-            console.log('初始聊天列表:', parsedMessage);
             const messageLists = parsedMessage.body.messageByInit.messagesList;
             for (const message of messageLists) {
                 const conversationInfo = message.conversations;
@@ -214,14 +211,17 @@ class AdsPowerService {
             await Network.setCacheDisabled({ cacheDisabled: true });
             Fetch.requestPaused(async ({requestId, request, frameId, resourseType}) => {
                 if (request.url.includes('https://creator.douyin.com/janus/douyin/creator/pc/work_list')) {
+                    console.log('parse video list');
                     const responseData = await Fetch.getResponseBody({requestId});
                     await this.parseVideoList(responseData);
                 }
                 if (request.url.includes('https://www.douyin.com/aweme/v1/web/im/user/info')) {
+                    console.log('parse im info');
                     const responseData = await Fetch.getResponseBody({requestId});
                     await this.parseIMUserInfo(responseData);
                 }
                 if (request.url.includes('https://imapi.douyin.com/v1/message/get_message_by_init')) {
+                    console.log('parse init message');
                     const responseData = await Fetch.getResponseBody({requestId});
                     if(request.headers.Accept.includes('protobuf')) {
                         await this.parseMessageList(responseData);
