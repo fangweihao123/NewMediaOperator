@@ -79,6 +79,7 @@ export default {
             await api.post('/adsPower/connect', {
               profileId: account.user_id
             });
+            await new Promise(resolve => setTimeout(resolve, 1000));
           } catch (error) {
             console.error(`Failed to connect account ${account.user_id}:`, error);
           }
