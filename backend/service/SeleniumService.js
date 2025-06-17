@@ -1,10 +1,22 @@
-const { Builder, By, ServiceBuilder, until} = require('selenium-webdriver');
+const { By, until} = require('selenium-webdriver');
 const { Key } = require('selenium-webdriver');
 
 class SeleniumService {
     constructor(adsPowerService) {
         this.videoInfoRefreshHandler = null;
         this.adsPowerService = adsPowerService;
+        this.replayMessage = '留下你的行业和电话号码'
+    }
+
+    // 获取回复信息
+    getReplyMessage() {
+        return this.replayMessage;
+    }
+
+    // 设置回复信息
+    setReplyMessage(message) {
+        this.replayMessage = message;
+        console.log('回复信息已更新为:', message);
     }
 
     // 获取视频信息
@@ -14,6 +26,7 @@ class SeleniumService {
             this.videoInfoRefreshHandler = setInterval(async () => {
                 taskManager.addTask(async () => {
                     if (this.adsPowerService.driver) {
+                        await this.adsPowerService.bindHookToFetchRequest();
                         await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
                     }
                     console.log('Successfully fetched video info');
@@ -25,6 +38,53 @@ class SeleniumService {
                         10000
                     );
                     await element.click();
+                    //点击私信箱之后 需要回复每一个人的私信
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    // 获取所有消息元素
+                    const messageElements = await this.adsPowerService.driver.findElements(
+                        By.xpath('/html/body/div[2]/div[1]/div[4]/div[1]/div[1]/header/div/div/div[2]/div/pace-island/div/ul[2]/div/li/div/div/div[3]/div/div/div[1]/div/div[2]/div[1]/div')
+                    );
+                    console.log(`找到 ${messageElements.length} 条消息`);
+                    // 遍历所有消息元素
+                    for (const messageElement of messageElements) {
+                        try {
+                            // 获取消息内容
+                            const nickname = await messageElement.getText();
+                            if(nickname.includes('陌生人消息')){
+                                await messageElement.click();
+                                // 等待输入框加载
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                                const strangerElements = await this.adsPowerService.driver.findElements(
+                                    By.xpath('/html/body/div[2]/div[1]/div[4]/div[1]/div[1]/header/div/div/div[2]/div/pace-island/div/ul[2]/div/li/div/div/div[3]/div/div/div[1]/div/div[2]/div[1]/div')
+                                );
+                                // 遍历所有消息元素
+                                for (const strangerElement of strangerElements) {
+                                    await strangerElement.click();
+                                    await new Promise(resolve => setTimeout(resolve, 2000));
+
+                                    const inputBox = await this.adsPowerService.driver.wait(
+                                        until.elementLocated(By.xpath('/html/body/div[2]/div[1]/div[4]/div[1]/div[1]/header/div/div/div[2]/div/pace-island/div/ul[2]/div/li/div/div/div[3]/div/div/div[2]/div/div[3]/div/div/div[1]/div[1]/div/div/div[2]/div/div/div/div')),
+                                        10000
+                                    );
+                                    
+                                    // 输入消息内容
+                                    await inputBox.sendKeys(this.replayMessage);
+                                    
+                                    // 等待一下确保消息输入完成
+                                    await new Promise(resolve => setTimeout(resolve, 3000));
+                                    
+                                    // 模拟按下回车键发送消息
+                                    await inputBox.sendKeys(Key.RETURN);
+                                    
+                                    // 等待消息发送完成
+                                    await new Promise(resolve => setTimeout(resolve, 2000));
+                                }
+                                break;
+                            }
+                        }catch(error){
+                            console.error('获取消息内容失败:', error);
+                        }
+                    }
                 });
             }, 120000); // Fetch every 120 seconds
 
@@ -62,7 +122,7 @@ class SeleniumService {
                 // Click the publish button
                 const publishButton = await this.adsPowerService.driver.wait(
                     until.elementLocated(By.xpath("//*[@id='DCPF']/div[1]/div[1]/div[1]/div[5]/div[1]/div[1]/div[1]/div[1]/div[1]/button[1]")),
-                    10000
+                    30000
                 );
                 await publishButton.click();
             } 

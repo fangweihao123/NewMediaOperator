@@ -80,8 +80,6 @@ class ConversationAnalysisService {
                     continue;
                 }
 
-                console.log(`Processing conversation: ${conversationKey}`);
-                
                 // 分析对话内容
                 const analysisResult = await this.analyzeConversation(conversationRecord.conversation);
                 
@@ -90,8 +88,6 @@ class ConversationAnalysisService {
                     
                     // 这里可以添加保存分析结果的逻辑
                     await this.saveAnalysisResult(profileId, conversationRecord.conversation_id, analysisResult.data);
-                } else {
-                    console.log(`No contact info found in conversation ${conversationKey}`);
                 }
 
                 // 标记为已处理

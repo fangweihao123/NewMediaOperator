@@ -1,5 +1,21 @@
 <template>
     <div class="message-manager">
+        <!-- 自动回复设置卡片 -->
+        <el-card class="box-card" style="margin-bottom: 20px;">
+          <template #header>
+            <div class="card-header">
+              <span>自动回复设置</span>
+              <el-button type="primary" size="small" @click="showReplySettingDialog">
+                编辑回复信息
+              </el-button>
+            </div>
+          </template>
+          <div class="reply-info">
+            <p><strong>当前回复信息:</strong></p>
+            <p class="reply-text">{{ currentReplyMessage || '留下你的行业和电话号码' }}</p>
+          </div>
+        </el-card>
+
         <el-card class="box-card">
           <template #header>
             <div class="card-header">
@@ -60,6 +76,37 @@
               <el-button type="primary" @click="getStrangerMessages">获取私信列表</el-button>
             </div>
         </el-card>
+
+        <!-- 回复信息设置对话框 -->
+        <el-dialog
+          v-model="replySettingDialogVisible"
+          title="设置自动回复信息"
+          width="500px"
+        >
+          <el-form :model="replyForm" label-width="120px">
+            <el-form-item label="回复信息">
+              <el-input 
+                v-model="replyForm.message" 
+                type="textarea" 
+                :rows="4"
+                placeholder="请输入自动回复信息"
+                maxlength="200"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="replySettingDialogVisible = false">取消</el-button>
+              <el-button 
+                type="primary" 
+                @click="handleReplySettingUpdate"
+                :loading="isUpdatingReply">
+                确定
+              </el-button>
+            </span>
+          </template>
+        </el-dialog>
     </div>
 </template>
 
@@ -73,7 +120,13 @@ export default {
     return {
       messages: [],
       replyInputs: reactive({}), // 使用 reactive 包装
-      replySending: reactive({}) // 使用 reactive 包装
+      replySending: reactive({}), // 使用 reactive 包装
+      replySettingDialogVisible: false,
+      replyForm: {
+        message: ''
+      },
+      currentReplyMessage: '',
+      isUpdatingReply: false
     }
   },
 
@@ -216,10 +269,49 @@ export default {
       } finally {
         this.replySending[conversationId] = false;
       }
+    },
+    async getCurrentReplyMessage() {
+      try {
+        const response = await api.get('/videos/getReply', {
+          params: {
+            profileId: this.currentUserId
+          }
+        });
+        this.currentReplyMessage = response.data.message;
+        this.replyForm.message = response.data.message;
+      } catch (error) {
+        console.error('获取回复信息失败:', error);
+      }
+    },
+    showReplySettingDialog() {
+      this.replyForm.message = this.currentReplyMessage;
+      this.replySettingDialogVisible = true;
+    },
+    async handleReplySettingUpdate() {
+      if (this.isUpdatingReply) {
+        this.$message.warning('正在更新中，请稍后再试');
+        return;
+      }
+
+      this.isUpdatingReply = true;
+      try {
+        const response = await api.post('/videos/updateReply', {
+          profileId: this.currentUserId,
+          message: this.replyForm.message,
+        });
+        this.currentReplyMessage = this.replyForm.message;
+        this.$message.success('自动回复信息更新成功');
+        this.replySettingDialogVisible = false;
+      } catch (error) {
+        this.$message.error('更新自动回复信息失败: ' + error.message);
+      } finally {
+        this.isUpdatingReply = false;
+      }
     }
   },
   created() {
     this.getStrangerMessages(this.currentUserId);
+    this.getCurrentReplyMessage();
   }
 }
 </script>
@@ -328,5 +420,24 @@ export default {
 
 :deep(.el-collapse-item__content) {
   padding: 0 20px 20px;
+}
+
+.reply-info {
+  padding: 10px;
+}
+
+.reply-text {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  color: #303133;
+  line-height: 1.5;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 </style> 

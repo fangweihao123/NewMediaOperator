@@ -38,6 +38,9 @@ class AdsPowerService {
             chromeOptions.addArguments('--no-sandbox');
             chromeOptions.addArguments('--disable-dev-shm-usage');
             chromeOptions.addArguments('--disable-gpu');
+
+            chromeOptions.addArguments('--disk-cache-size=0');
+            chromeOptions.addArguments('--media-cache-size=0');
             const service = new chrome.ServiceBuilder(webDriverPath);
             console.log('Using Selenium URL:', fullSeleniumURL);  
             console.log('building drive instance');
@@ -47,7 +50,6 @@ class AdsPowerService {
                 .setChromeService(service)
                 .build();
             this.debugPort = debugPort;
-            await this.bindHookToFetchRequest();
             this.driver.get('https://www.douyin.com/user/self?from_tab_name=main&showTab=post');
             return true;
         } catch (error) {
@@ -210,10 +212,10 @@ class AdsPowerService {
         try{
             const cdpConnection = await this.driver.createCDPConnection('page');
             await this.driver.onLogEvent(cdpConnection);
-            const protocol = await CDP({ port: this.debugPort });
-            const { Runtime, Network, Fetch } = protocol;
+            const cdpProtocal = await CDP({ port: this.debugPort });
+            const { Runtime, Network, Fetch } = cdpProtocal;
+            await Network.setCacheDisabled({ cacheDisabled: true });
             Fetch.requestPaused(async ({requestId, request, frameId, resourseType}) => {
-                console.log("requestURL", request);
                 if (request.url.includes('https://creator.douyin.com/janus/douyin/creator/pc/work_list')) {
                     const responseData = await Fetch.getResponseBody({requestId});
                     await this.parseVideoList(responseData);
@@ -237,6 +239,7 @@ class AdsPowerService {
                             {urlPattern: 'https://imapi.douyin.com/v1/message/get_message_by_init*', requestStage:'Response'}
                 ]
             });
+            this.isHookBound = true;
         }catch(error){
             console.error('bindHookToFetchRequest failed:', error);
         }

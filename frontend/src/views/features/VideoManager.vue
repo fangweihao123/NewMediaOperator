@@ -303,7 +303,7 @@ export default {
       } else {
         return '立即生成并上传';
       }
-    }
+    },
   },
   created() {
     this.getVideosFromAdsPower(this.currentUserId);

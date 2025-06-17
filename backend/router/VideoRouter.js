@@ -172,6 +172,51 @@ module.exports = () => {
         }, 5000);
         res.json({ message: 'Video delete successfully' });
     });
+
+    // 获取回复信息
+    router.get('/getReply', async (req, res) => {
+        try {
+            const { profileId } = req.query;
+            if (!profileId) {
+                return res.status(400).json({ error: 'profileId is required' });
+            }
+            
+            const service = serviceManager.getService(profileId);
+            const replyMessage = service.seleniumService.getReplyMessage();
+            
+            res.json({ 
+                success: true,
+                message: replyMessage 
+            });
+        } catch (error) {
+            console.error('获取回复信息失败:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 更新回复信息
+    router.post('/updateReply', async (req, res) => {
+        try {
+            const { profileId, message } = req.body;
+            if (!profileId) {
+                return res.status(400).json({ error: 'profileId is required' });
+            }
+            if (!message) {
+                return res.status(400).json({ error: 'message is required' });
+            }
+            
+            const service = serviceManager.getService(profileId);
+            service.seleniumService.setReplyMessage(message);
+            
+            res.json({ 
+                success: true,
+                message: '回复信息更新成功' 
+            });
+        } catch (error) {
+            console.error('更新回复信息失败:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
     
     return router;
 }
