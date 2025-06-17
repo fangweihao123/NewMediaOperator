@@ -38,12 +38,12 @@ class SeleniumService {
                     );
                     await element.click();
                     //点击私信箱之后 需要回复每一个人的私信
-                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    await new Promise(resolve => setTimeout(resolve, 4000));
                     // 获取所有消息元素
                     const messageElements = await this.adsPowerService.driver.findElements(
                         By.xpath('/html/body/div[2]/div[1]/div[4]/div[1]/div[1]/header/div/div/div[2]/div/pace-island/div/ul[2]/div/li/div/div/div[3]/div/div/div[1]/div/div[2]/div[1]/div')
                     );
-                    console.log(`找到 ${messageElements.length} 条消息`);
+                    console.log(`私信箱找到 ${messageElements.length} 条消息`);
                     // 遍历所有消息元素
                     for (const messageElement of messageElements) {
                         try {
