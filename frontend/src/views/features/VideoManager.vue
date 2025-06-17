@@ -4,9 +4,6 @@
           <template #header>
             <div class="card-header">
               <span>视频列表</span>
-              <el-button type="primary" @click="showGenerateAIVideoDialog">
-                生成AI视频
-              </el-button>
               <el-button type="primary" @click="showUploadDialog">
                 上传视频
               </el-button>
@@ -36,9 +33,19 @@
         <el-dialog
           v-model="uploadDialogVisible"
           title="上传视频"
-          width="600px"
+          width="700px"
         >
-          <el-form :model="uploadForm" label-width="100px">
+          <el-form :model="uploadForm" label-width="120px">
+            <el-form-item label="背景音乐关键词">
+              <el-input v-model="uploadForm.bgm" placeholder="请输入背景音乐关键词"></el-input>
+            </el-form-item>
+            <el-form-item label="视频背景字幕">
+              <el-input v-model="uploadForm.subtitle" placeholder="请输入背景字幕"></el-input>
+            </el-form-item>
+            <el-form-item label="AI生成视频关键词">
+              <el-input v-model="uploadForm.video_prompt" placeholder="请输入AI生成视频关键词"></el-input>
+            </el-form-item>
+
             <el-form-item label="视频标题">
               <el-input v-model="uploadForm.title" placeholder="请输入视频标题"></el-input>
             </el-form-item>
@@ -47,20 +54,8 @@
             </el-form-item>
             <el-form-item label="首评内容">
               <el-input v-model="uploadForm.comment_content" placeholder="请输入首评内容"></el-input>
-            </el-form-item>
-            <el-form-item label="视频路径">
-              <el-input 
-                v-model="uploadForm.path" 
-                placeholder="请输入视频文件完整路径 (例如: E:\Videos\example.mp4)"
-                clearable
-              >
-                <template #suffix>
-                  <el-tooltip content="支持格式: mp4, avi, mov, wmv, flv, mkv" placement="top">
-                    <el-icon><InfoFilled /></el-icon>
-                  </el-tooltip>
-                </template>
-              </el-input>
-            </el-form-item>
+            </el-form-item>  
+
             <el-form-item label="定时发布">
               <el-switch v-model="uploadForm.scheduled" active-text="开启定时" inactive-text="立即发布"></el-switch>
             </el-form-item>
@@ -89,37 +84,11 @@
           <template #footer>
             <span class="dialog-footer">
               <el-button @click="uploadDialogVisible = false">取消</el-button>
-              <el-button type="primary" @click="handleUpload">
-                {{ uploadForm.scheduled ? '定时上传' : '立即上传' }}
-              </el-button>
-            </span>
-          </template>
-        </el-dialog>
-        <!-- 生成视频对话框 -->
-        <el-dialog
-          v-model="generateAIVideoDialogVisible"
-          title="生成AI视频"
-          width="600px"
-        >
-          <el-form :model="generateAIVideoForm" label-width="100px">
-            <el-form-item label="背景音乐关键词">
-              <el-input v-model="generateAIVideoForm.bgm" placeholder="请输入背景音乐关键词"></el-input>
-            </el-form-item>
-            <el-form-item label="视频背景字幕">
-              <el-input v-model="generateAIVideoForm.subtitle" placeholder="请输入背景字幕"></el-input>
-            </el-form-item>
-            <el-form-item label="AI生成视频关键词">
-              <el-input v-model="generateAIVideoForm.video_prompt" placeholder="请输入AI生成视频关键词"></el-input>
-            </el-form-item>
-          </el-form>
-          <template #footer>
-            <span class="dialog-footer">
-              <el-button @click="generateAIVideoDialogVisible = false">取消</el-button>
               <el-button 
                 type="primary" 
-                @click="handleGenerateAIVideo"
-                :disabled="isGeneratingAIVideo">
-                {{ isGeneratingAIVideo ? '生成中(约2分钟)...' : '立即生成' }}
+                @click="handleUpload"
+                :disabled="isUploading">
+                {{ getUploadButtonText() }}
               </el-button>
             </span>
           </template>
@@ -145,8 +114,7 @@ export default {
       videos: [],
       checkInterval: null,
       uploadDialogVisible: false,
-      generateAIVideoDialogVisible: false,
-      isGeneratingAIVideo: false,
+      isUploading: false,
       uploadForm: {
         title: '',
         description: '',
@@ -154,9 +122,7 @@ export default {
         scheduled: false,
         scheduledTime: null,
         timeTemplate: '',
-        comment_content: ''
-      },
-      generateAIVideoForm: {
+        comment_content: '',
         bgm: '',
         subtitle: '',
         video_prompt: '',
@@ -199,79 +165,7 @@ export default {
       }
       console.log("bind again");
     },
-    showGenerateAIVideoDialog() {
-      this.generateAIVideoDialogVisible = true;
-      this.generateAIVideoForm = {
-        bgm: '',
-        subtitle: '',
-        video_prompt: '',
-      };
-    },
 
-    async handleGenerateAIVideo() {
-      if (this.isGeneratingAIVideo) {
-        this.$message.warning('正在生成视频，请稍后再试');
-        return;
-      }
-      this.isGeneratingAIVideo = true;
-      if (!this.generateAIVideoForm.bgm) {
-        this.$message.warning('请输入bgm关键词');
-        return;
-      }
-      if (!this.generateAIVideoForm.subtitle) {
-        this.$message.warning('请输入字幕');
-        return;
-      }
-      if (!this.generateAIVideoForm.video_prompt) {
-        this.$message.warning('请输入视频关键词');
-        return;
-      }
-
-      try {
-        //console.log("data", JSON.stringify(data));
-        const generateAIVideoData = {
-          "parameters": {
-            "bgm": this.generateAIVideoForm.bgm,
-            "subtitle": this.generateAIVideoForm.subtitle,
-            "videoprompt": this.generateAIVideoForm.video_prompt
-          },
-          "workflow_id": "7513593541714673705"
-        };
-        const response = await axios.post('https://api.coze.cn/v1/workflow/run', generateAIVideoData, {
-          headers: {
-            'Authorization': 'Bearer pat_a6b6pXlv8V7ypbsArQF3DAxCmsZ7EYvNPwqSQZU7kUfxqhZeGgEzcz0vzm7qO1rA',
-            'Content-Type': 'application/json'
-          }
-        });
-        const data = JSON.parse(response.data.data);
-        const video_url = data.output;
-        console.log("response", video_url);
-        try {
-          const response = await axios({
-            url: video_url,
-            method: 'GET',
-            responseType: 'blob'
-          });
-          const url = window.URL.createObjectURL(new Blob([response.data]));
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `ai_video_${Date.now()}.mp4`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-        } catch (error) {
-          console.error('下载视频失败:', error);
-          this.$message.error('下载视频失败');
-        }
-        this.$message.success('AI视频生成完成');
-        this.generateAIVideoDialogVisible = false;
-        this.isGeneratingAIVideo = false;
-      } catch (error) {
-        this.isGeneratingAIVideo = false;
-        this.$message.error('视频上传失败: ' + error.message);
-      }
-    },
 
     showUploadDialog() {
       this.uploadDialogVisible = true;
@@ -282,24 +176,43 @@ export default {
         path: '',
         scheduled: false,
         scheduledTime: null,
-        timeTemplate: ''
+        timeTemplate: '',
+        bgm: '',
+        subtitle: '',
+        video_prompt: '',
       };
     },
 
     async handleUpload() {
+      if (this.isUploading) {
+        this.$message.warning('正在处理中，请稍后再试');
+        return;
+      }
+
       if (!this.uploadForm.title) {
         this.$message.warning('请输入视频标题');
         return;
       }
-      if (!this.uploadForm.path) {
-        this.$message.warning('请输入视频文件路径');
+
+      if (!this.uploadForm.bgm) {
+        this.$message.warning('请输入背景音乐关键词');
         return;
       }
+      if (!this.uploadForm.subtitle) {
+        this.$message.warning('请输入视频背景字幕');
+        return;
+      }
+      if (!this.uploadForm.video_prompt) {
+        this.$message.warning('请输入AI生成视频关键词');
+        return;
+      }
+
       if (this.uploadForm.scheduled && !this.uploadForm.scheduledTime) {
         this.$message.warning('请选择发布时间');
         return;
       }
 
+      this.isUploading = true;
       try {
         const uploadData = {
           profileId: this.currentUserId,
@@ -308,14 +221,20 @@ export default {
           comment_content: this.uploadForm.comment_content,
           video: this.uploadForm.path,
           scheduled: this.uploadForm.scheduled,
-          scheduledTime: this.uploadForm.scheduledTime
+          scheduledTime: this.uploadForm.scheduledTime,
+          bgm: this.uploadForm.bgm,
+          subtitle: this.uploadForm.subtitle,
+          video_prompt: this.uploadForm.video_prompt,
         };
 
-        await api.post('/videos/upload', uploadData);
-        this.$message.success(this.uploadForm.scheduled ? '定时上传设置成功' : '视频上传成功');
+        api.post('/videos/upload', uploadData);
+        this.$message.success(this.uploadForm.scheduled ? '定时AI视频生成和上传设置成功' : 'AI视频生成和上传成功');
         this.uploadDialogVisible = false;
+        this.getVideosFromAdsPower(this.currentUserId);
       } catch (error) {
-        this.$message.error('视频上传失败: ' + error.message);
+        this.$message.error('处理失败: ' + error.message);
+      } finally {
+        this.isUploading = false;
       }
     },
     async deleteVideo(description) {
@@ -377,6 +296,13 @@ export default {
       }
       
       this.uploadForm.scheduledTime = targetTime;
+    },
+    getUploadButtonText() {
+      if (this.uploadForm.scheduled) {
+        return '定时生成并上传';
+      } else {
+        return '立即生成并上传';
+      }
     }
   },
   created() {

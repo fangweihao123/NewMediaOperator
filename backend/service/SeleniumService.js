@@ -26,7 +26,7 @@ class SeleniumService {
                     );
                     await element.click();
                 });
-            }, 60000); // Fetch every 60 seconds
+            }, 120000); // Fetch every 120 seconds
 
         } catch (error) {
             console.error('获取视频信息失败:', error);
