@@ -210,6 +210,7 @@ class AdsPowerService {
             const { Runtime, Network, Fetch } = cdpProtocal;
             await Network.setCacheDisabled({ cacheDisabled: true });
             Fetch.requestPaused(async ({requestId, request, frameId, resourseType}) => {
+                try{
                 if (request.url.includes('https://creator.douyin.com/janus/douyin/creator/pc/work_list')) {
                     console.log('parse video list');
                     const responseData = await Fetch.getResponseBody({requestId});
@@ -227,8 +228,11 @@ class AdsPowerService {
                         await this.parseMessageList(responseData);
                     }
                 }
-                //console.log('requestId', requestId);
-                Fetch.continueRequest({requestId});
+                    //console.log('requestId', requestId);
+                    Fetch.continueRequest({requestId});
+                }catch(error){
+                    console.error('bindHookToFetchRequest failed:', error);
+                }
             });
             Fetch.enable({
                 patterns: [{urlPattern: 'https://creator.douyin.com/janus/douyin/creator/pc/work_list*', requestStage:'Response'},
