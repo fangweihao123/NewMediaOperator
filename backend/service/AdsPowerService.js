@@ -217,7 +217,6 @@ class AdsPowerService {
                     await this.parseVideoList(responseData);
                 }
                 if (request.url.includes('https://www.douyin.com/aweme/v1/web/im/user/info')) {
-                    console.log('parse im info');
                     const responseData = await Fetch.getResponseBody({requestId});
                     await this.parseIMUserInfo(responseData);
                 }
@@ -231,7 +230,7 @@ class AdsPowerService {
                     //console.log('requestId', requestId);
                     Fetch.continueRequest({requestId});
                 }catch(error){
-                    console.error('bindHookToFetchRequest failed:', error);
+                    console.error('bindHookToFetchRequest failed:');
                 }
             });
             Fetch.enable({
