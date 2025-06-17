@@ -245,14 +245,18 @@ app.post('/api/conversation-analysis/set-interval', async (req, res) => {
 
 // 启动服务器
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, '0.0.0.0', async () => {
-    console.log(`Starting Express application...`);
-    logger.info(`Server is running on port ${PORT}`);
-    // 自动启动对话分析服务
-    try {
-        await ConversationAnalysisService.start();
-        console.log('ConversationAnalysisService started automatically');
-    } catch (error) {
-        console.error('Failed to start ConversationAnalysisService:', error);
-    }
-}); 
+try{
+    app.listen(PORT, '0.0.0.0', async () => {
+        console.log(`Starting Express application...`);
+        logger.info(`Server is running on port ${PORT}`);
+        // 自动启动对话分析服务
+        try {
+            await ConversationAnalysisService.start();
+            console.log('ConversationAnalysisService started automatically');
+        } catch (error) {
+            console.error('Failed to start ConversationAnalysisService:', error);
+        }
+    }); 
+}catch(error){
+    console.error('Failed to start server:', error);
+}

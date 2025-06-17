@@ -211,22 +211,22 @@ class AdsPowerService {
             await Network.setCacheDisabled({ cacheDisabled: true });
             Fetch.requestPaused(async ({requestId, request, frameId, resourseType}) => {
                 try{
-                if (request.url.includes('https://creator.douyin.com/janus/douyin/creator/pc/work_list')) {
-                    console.log('parse video list');
-                    const responseData = await Fetch.getResponseBody({requestId});
-                    await this.parseVideoList(responseData);
-                }
-                if (request.url.includes('https://www.douyin.com/aweme/v1/web/im/user/info')) {
-                    const responseData = await Fetch.getResponseBody({requestId});
-                    await this.parseIMUserInfo(responseData);
-                }
-                if (request.url.includes('https://imapi.douyin.com/v1/message/get_message_by_init')) {
-                    console.log('parse init message');
-                    const responseData = await Fetch.getResponseBody({requestId});
-                    if(request.headers.Accept.includes('protobuf')) {
-                        await this.parseMessageList(responseData);
+                    if (request.url.includes('https://creator.douyin.com/janus/douyin/creator/pc/work_list')) {
+                        console.log('parse video list');
+                        const responseData = await Fetch.getResponseBody({requestId});
+                        await this.parseVideoList(responseData);
                     }
-                }
+                    if (request.url.includes('https://www.douyin.com/aweme/v1/web/im/user/info')) {
+                        const responseData = await Fetch.getResponseBody({requestId});
+                        await this.parseIMUserInfo(responseData);
+                    }
+                    if (request.url.includes('https://imapi.douyin.com/v1/message/get_message_by_init')) {
+                        console.log('parse init message');
+                        const responseData = await Fetch.getResponseBody({requestId});
+                        if(request.headers.Accept.includes('protobuf')) {
+                            await this.parseMessageList(responseData);
+                        }
+                    }
                     //console.log('requestId', requestId);
                     Fetch.continueRequest({requestId});
                 }catch(error){
