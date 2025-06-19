@@ -118,6 +118,11 @@ class AdsPowerService {
             const protoParseService = new ProtoParseService();
             const parsedMessage = await protoParseService.parseProtobufMessage(decodedBuffer);
             const messageLists = parsedMessage.body.messageByInit.messagesList;
+            
+            // 获取今天的日期（只保留日期部分，不包含时间）
+            const today = new Date();
+            const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            
             for (const message of messageLists) {
                 const conversationInfo = message.conversations;
                 const firstpageParticipant = conversationInfo.firstpageparticipant;
@@ -130,14 +135,26 @@ class AdsPowerService {
                 const messageListContent = message.messagesList;
                 let cnt = 1;
                 let conversation = '';
+                
+                // 检查是否有当日的消息
+                let hasTodayMessage = false;
+                
                 for (let i = 0; i <= messageListContent.length - 1; i++) {
                     try {
-                        const messageContent = JSON.parse(messageListContent[i].content);
-                        if (messageContent.aweType === 700 || messageContent.aweType === 0) {
-                            if(cnt <= 3 && messageContent.text && messageContent.text.trim()){
-                                conversation += messageContent.text;
-                                conversation += '\n';
-                                cnt++;
+                        // 检查消息时间是否为今天
+                        const messageTime = new Date(messageListContent[i].createTime); // createTime已经是毫秒
+                        const messageDate = new Date(messageTime.getFullYear(), messageTime.getMonth(), messageTime.getDate());
+                        
+                        // 只处理今天的消息
+                        if (messageDate.getTime() === todayDate.getTime()) {
+                            hasTodayMessage = true;
+                            const messageContent = JSON.parse(messageListContent[i].content);
+                            if (messageContent.aweType === 700 || messageContent.aweType === 0) {
+                                if(cnt <= 3 && messageContent.text && messageContent.text.trim()){
+                                    conversation += messageContent.text;
+                                    conversation += '\n';
+                                    cnt++;
+                                }
                             }
                         }
                     } catch (error) {
@@ -145,16 +162,17 @@ class AdsPowerService {
                         continue;
                     }
                 }
-                // 保存会话信息到数据库
-                try {
-                    const models = await dbManager.getModels(this.profileId);
-                    const existingConversation = await models.ConversationInfo.findOne({
-                        where: {
-                            conversation_id: conversationInfo.conversationId
-                        }
-                    });
+                
+                // 只有当存在今日消息时才保存会话信息
+                if(conversation.length > 0 && hasTodayMessage){
+                    try {
+                        const models = await dbManager.getModels(this.profileId);
+                        const existingConversation = await models.ConversationInfo.findOne({
+                            where: {
+                                conversation_id: conversationInfo.conversationId
+                            }
+                        });
 
-                    if(conversation.length > 0){
                         if (existingConversation) {
                             existingConversation.conversation = conversation;
                             await existingConversation.save();
@@ -167,9 +185,9 @@ class AdsPowerService {
                             };
                             await models.ConversationInfo.create(conversationData);
                         }
+                    } catch (error) {
+                        console.error('保存会话信息失败:', error);
                     }
-                } catch (error) {
-                    console.error('保存会话信息失败:', error);
                 }
             }
         } else {

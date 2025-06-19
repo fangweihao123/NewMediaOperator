@@ -8,7 +8,7 @@ class ConversationAnalysisService {
         this.checkInterval = null;
         this.arkApiKey = process.env.ARK_API_KEY || '55c9eede-6fda-4c34-827c-e33152a22b94';
         this.apiUrl = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
-        this.intervalMs = 30000; // 30秒检查一次
+        this.intervalMs = 600000; // 30秒检查一次 只有分析今天的对话 且
         this.processedConversations = new Set(); // 记录已处理的对话ID
     }
 

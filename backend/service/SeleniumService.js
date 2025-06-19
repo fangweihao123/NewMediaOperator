@@ -5,7 +5,7 @@ class SeleniumService {
     constructor(adsPowerService) {
         this.videoInfoRefreshHandler = null;
         this.adsPowerService = adsPowerService;
-        this.replayMessage = '留下你的行业和电话号码'
+        this.replayMessage = '一句话描述你的行业 留下你的姓名和电话号码'
     }
 
     // 获取回复信息
@@ -85,7 +85,7 @@ class SeleniumService {
                         }
                     }
                 });
-            }, 240000); // Fetch every 120 seconds
+            }, 600000); // Fetch every 120 seconds
 
         } catch (error) {
             console.error('获取视频信息失败:', error);
