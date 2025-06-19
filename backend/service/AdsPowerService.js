@@ -12,6 +12,7 @@ class AdsPowerService {
         this.debugPort = null;
         this.requestId = null;
         this.profileId = profileId;
+        this.cnt = 0;
     }
 
     async connectToAdsPower() {
@@ -116,7 +117,9 @@ class AdsPowerService {
         if(responseData.base64Encoded) {
             const decodedBuffer = Buffer.from(responseData.body, 'base64');
             const protoParseService = new ProtoParseService();
+            console.log('parse start');
             const parsedMessage = await protoParseService.parseProtobufMessage(decodedBuffer);
+            console.log('parse end');
             const messageLists = parsedMessage.body.messageByInit.messagesList;
             
             // 获取今天的日期（只保留日期部分，不包含时间）
@@ -243,7 +246,8 @@ class AdsPowerService {
                         await this.parseIMUserInfo(responseData);
                     }
                     if (request.url.includes('https://imapi.douyin.com/v1/message/get_message_by_init')) {
-                        console.log('parse init message');
+                        this.cnt++;
+                        console.log('parse init message',this.cnt);
                         const responseData = await Fetch.getResponseBody({requestId});
                         if(request.headers.Accept.includes('protobuf')) {
                             await this.parseMessageList(responseData);
