@@ -133,13 +133,12 @@ class AdsPowerService {
                     owner = firstpageParticipant.participantsList[1].userId;
                 }
                 const messageListContent = message.messagesList;
-                let cnt = 1;
                 let conversation = '';
                 
                 // 检查是否有当日的消息
                 let hasTodayMessage = false;
                 
-                for (let i = 0; i <= messageListContent.length - 1; i++) {
+                for (let i = messageListContent.length - 1; i >= 0; i--) {
                     try {
                         // 检查消息时间是否为今天
                         const messageTime = new Date(messageListContent[i].createTime); // createTime已经是毫秒
@@ -150,12 +149,13 @@ class AdsPowerService {
                             hasTodayMessage = true;
                             const messageContent = JSON.parse(messageListContent[i].content);
                             if (messageContent.aweType === 700 || messageContent.aweType === 0) {
-                                if(cnt <= 3 && messageContent.text && messageContent.text.trim()){
-                                    conversation += messageContent.text;
-                                    conversation += '\n';
-                                    cnt++;
+                                if(messageContent.text && messageContent.text.trim()){
+                                    conversation = messageContent.text + conversation;
+                                    conversation = '\n' + conversation; 
                                 }
                             }
+                        }else{
+                            break;
                         }
                     } catch (error) {
                         // If content is not valid JSON, skip it
