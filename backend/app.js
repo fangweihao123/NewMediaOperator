@@ -243,6 +243,28 @@ app.post('/api/conversation-analysis/set-interval', async (req, res) => {
     }
 });
 
+// 全局异常处理 - 防止程序崩溃
+process.on('uncaughtException', (error) => {
+    console.error('💥 未捕获的异常:', error);
+    console.error('Stack trace:', error.stack);
+    // 记录错误但不退出程序
+    console.log('⚠️ 程序继续运行...');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('🚫 未处理的Promise rejection:', reason);
+    console.error('Promise:', promise);
+    // 记录错误但不退出程序
+    console.log('⚠️ 程序继续运行...');
+});
+
+// CDP相关的特殊错误处理
+process.on('warning', (warning) => {
+    if (warning.name === 'DeprecationWarning' || warning.message.includes('CDP')) {
+        console.warn('⚠️ CDP警告:', warning.message);
+    }
+});
+
 // 启动服务器
 const PORT = process.env.PORT || 5001;
 try{

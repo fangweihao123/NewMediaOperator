@@ -121,8 +121,12 @@ class AdsPowerService {
             for (const message of messageLists) {
                 const conversationInfo = message.conversations;
                 const firstpageParticipant = conversationInfo.firstpageparticipant;
-                const guest = firstpageParticipant.participantsList[0].userId;
-                const owner = firstpageParticipant.participantsList[1].userId;
+                let guest = null;
+                let owner = null;
+                if(firstpageParticipant.participantsList.length > 1){
+                    guest = firstpageParticipant.participantsList[0].userId;
+                    owner = firstpageParticipant.participantsList[1].userId;
+                }
                 const messageListContent = message.messagesList;
                 let cnt = 1;
                 let conversation = '';
@@ -230,7 +234,7 @@ class AdsPowerService {
                     //console.log('requestId', requestId);
                     Fetch.continueRequest({requestId});
                 }catch(error){
-                    console.error('bindHookToFetchRequest failed:');
+                    console.error('bindHookToFetchRequest failed:', error);
                 }
             });
             Fetch.enable({
