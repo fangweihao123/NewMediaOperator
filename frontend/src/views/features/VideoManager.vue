@@ -40,7 +40,13 @@
               <el-input v-model="uploadForm.bgm" placeholder="请输入背景音乐关键词"></el-input>
             </el-form-item>
             <el-form-item label="视频背景字幕">
-              <el-input v-model="uploadForm.subtitle" placeholder="请输入背景字幕"></el-input>
+              <el-input 
+                v-model="uploadForm.subtitle" 
+                type="textarea" 
+                :rows="4"
+                placeholder="请输入背景字幕，支持多行输入"
+                resize="vertical">
+              </el-input>
             </el-form-item>
             <el-form-item label="AI生成视频关键词">
               <el-input v-model="uploadForm.video_prompt" placeholder="请输入AI生成视频关键词"></el-input>
@@ -223,7 +229,7 @@ export default {
           scheduled: this.uploadForm.scheduled,
           scheduledTime: this.uploadForm.scheduledTime,
           bgm: this.uploadForm.bgm,
-          subtitle: this.uploadForm.subtitle,
+          subtitle: [this.uploadForm.subtitle],
           video_prompt: this.uploadForm.video_prompt,
         };
 

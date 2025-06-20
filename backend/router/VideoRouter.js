@@ -89,7 +89,7 @@ module.exports = () => {
     };
     
     router.post('/upload', async (req, res) => {
-        const { 
+        let { 
             profileId, 
             title, 
             description, 
@@ -106,7 +106,8 @@ module.exports = () => {
         
         const service = serviceManager.getService(profileId);
         const taskScheduleService = service.taskScheduleService;
-        
+        video_prompt += ' --rt 9:16 --dur 10 --rs 1080p'
+
         let videoPath = video;
         let tempFilePath = null;
         try {

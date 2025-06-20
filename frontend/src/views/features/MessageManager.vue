@@ -88,10 +88,12 @@
               <el-input 
                 v-model="replyForm.message" 
                 type="textarea" 
-                :rows="4"
-                placeholder="请输入自动回复信息"
-                maxlength="200"
+                :rows="6"
+                placeholder="请输入自动回复信息，支持多行输入"
+                maxlength="500"
                 show-word-limit
+                resize="vertical"
+                :autosize="{ minRows: 4, maxRows: 10 }"
               />
             </el-form-item>
           </el-form>

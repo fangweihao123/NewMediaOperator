@@ -5,7 +5,7 @@ class SeleniumService {
     constructor(adsPowerService) {
         this.videoInfoRefreshHandler = null;
         this.adsPowerService = adsPowerService;
-        this.replayMessage = '一句话描述你的行业 留下你的姓名和电话号码'
+        this.replayMessage = '按这个填写\n姓名：\n 联系方式：  \n一句话简单说下你的行业（项目简介）： \n要多少资金： \n用途是什么：\n（请您按要求留下资料，符合条件的优先联系）\n'
     }
 
     // 获取回复信息
@@ -67,7 +67,12 @@ class SeleniumService {
                                     );
                                     
                                     // 输入消息内容
-                                    await inputBox.sendKeys(this.replayMessage);
+                                    const messageLines = this.replayMessage.split('\n');
+                                    for (const line of messageLines) {
+                                        await inputBox.sendKeys(line);
+                                        await inputBox.sendKeys(Key.CONTROL, Key.RETURN);
+                                        await new Promise(resolve => setTimeout(resolve, 100));
+                                    }
                                     
                                     // 等待一下确保消息输入完成
                                     await new Promise(resolve => setTimeout(resolve, 5000));
