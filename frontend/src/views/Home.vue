@@ -30,7 +30,6 @@
 
 <script>
 import {User, VideoCamera, Message} from '@element-plus/icons-vue'
-import AccountManager from './features/AccountManager.vue'
 import VideoManager from './features/VideoManager.vue'
 import MessageManager from './features/MessageManager.vue'
 import AnalysisResults from './features/AnalysisResults.vue'
@@ -41,7 +40,6 @@ export default {
     User,
     VideoCamera,
     Message,
-    AccountManager,
     VideoManager,
     MessageManager,
     AnalysisResults
@@ -56,9 +54,6 @@ export default {
     handleSelect(key) {
       this.activeMenu = key;
       switch (key) {
-        case 'account':
-          this.currentComponent = 'AccountManager';
-          break;
         case 'video':
           this.currentComponent = 'VideoManager';
           break;
@@ -69,7 +64,7 @@ export default {
           this.currentComponent = 'AnalysisResults';
           break;
         default:
-          this.currentComponent = 'AccountManager';
+          this.currentComponent = 'VideoManager';
           break;
       }
     }

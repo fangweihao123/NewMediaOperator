@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const winston = require('winston');
 const ConversationAnalysisService = require('./service/ConversationAnalysisService');
+const AdsPowerService = require('./service/AdsPowerService');
 const AdsPowerRouter = require('./router/AdsPowerRouter');
 const VideoRouter = require('./router/VideoRouter');
 const MessageRouter = require('./router/MessageRouter');
@@ -267,18 +268,15 @@ process.on('warning', (warning) => {
 
 // 启动服务器
 const PORT = process.env.PORT || 5001;
-try{
-    app.listen(PORT, '0.0.0.0', async () => {
-        console.log(`Starting Express application...`);
-        logger.info(`Server is running on port ${PORT}`);
-        // 自动启动对话分析服务
-        try {
-            await ConversationAnalysisService.start();
-            console.log('ConversationAnalysisService started automatically');
-        } catch (error) {
-            console.error('Failed to start ConversationAnalysisService:', error);
-        }
-    }); 
-}catch(error){
-    console.error('Failed to start server:', error);
-}
+app.listen(PORT, '0.0.0.0', async () => {
+    console.log(`Starting Express application...`);
+    logger.info(`Server is running on port ${PORT}`);
+    // 自动启动对话分析服务
+    try {
+        await AdsPowerService.openBrowser(serviceManager);
+        await ConversationAnalysisService.start();
+        console.log('ConversationAnalysisService started automatically');
+    } catch (error) {
+        console.error('Failed to start ConversationAnalysisService:', error);
+    }
+}); 

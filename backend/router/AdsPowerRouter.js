@@ -34,8 +34,7 @@ module.exports = () => {
 
     
     router.get('/userList', async (req, res) => {
-        const adsPowerService = new AdsPowerService('0');
-        const response = await adsPowerService.getOpenBrowserList();
+        const response = await AdsPowerService.getOpenBrowserList();
         res.json({  status: 'success', message: response });
     });
     return router;

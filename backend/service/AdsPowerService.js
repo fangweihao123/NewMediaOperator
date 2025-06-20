@@ -15,9 +15,44 @@ class AdsPowerService {
         this.cnt = 0;
     }
 
-    async connectToAdsPower() {
+    static async openBrowser(serviceManager){
+        const accountList = await AdsPowerService.getOpenBrowserList();
+        if(accountList.length > 0) {
+            for (const account of accountList) {
+              try {
+                const profileId = account.user_id;
+                const {driver, debugPort} = await AdsPowerService.connectToAdsPower(profileId);
+                let service = serviceManager.getService(profileId);
+                driver.get('https://www.douyin.com/user/self?from_tab_name=main&showTab=post');
+                service.adsPowerService.driver = driver;
+                service.adsPowerService.debugPort = debugPort;
+                await service.adsPowerService.bindHookToFetchRequest();
+                service.seleniumService.fetchVideoInfoTimer(service.taskScheduleService);
+                await new Promise(resolve => setTimeout(resolve, 5000));
+              } catch (error) {
+                console.error(`Failed to connect account ${account.user_id}:`, error);
+              }
+            }
+        }
+    }
+
+    static async getOpenBrowserList(){
+        const response = await fetch(`http://local.adspower.net:50325/api/v1/user/list?page_size=100`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        const responseBody = await response.body.getReader().read();
+        const data = JSON.parse(new TextDecoder().decode(responseBody.value));
+        console.log(data);
+        const browserList = data.data.list;
+        return browserList;
+    }
+
+    static async connectToAdsPower(profileId) {
         try {
-            const response = await fetch(`${this.adsPowerUrl}/api/v1/browser/start?user_id=${this.profileId}`, {
+            const response = await fetch(`http://local.adspower.net:50325/api/v1/browser/start?user_id=${profileId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -45,15 +80,12 @@ class AdsPowerService {
             const service = new chrome.ServiceBuilder(webDriverPath);
             console.log('Using Selenium URL:', fullSeleniumURL);  
             console.log('building drive instance');
-            this.driver = await new Builder()
+            const driver = await new Builder()
                 .forBrowser('chrome')
                 .setChromeOptions(chromeOptions)
                 .setChromeService(service)
                 .build();
-            this.debugPort = debugPort;
-            await this.bindHookToFetchRequest();
-            this.driver.get('https://www.douyin.com/user/self?from_tab_name=main&showTab=post');
-            return true;
+            return {driver, debugPort};
         } catch (error) {
             console.error('连接AdsPower失败:', error);
             throw error;
@@ -68,19 +100,7 @@ class AdsPowerService {
         }
     }
 
-    async getOpenBrowserList(){
-        const response = await fetch(`${this.adsPowerUrl}/api/v1/user/list?page_size=100`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        const responseBody = await response.body.getReader().read();
-        const data = JSON.parse(new TextDecoder().decode(responseBody.value));
-        console.log(data);
-        const browserList = data.data.list;
-        return browserList;
-    }
+    
 
     async parseVideoList(responseData){
         let jsonData;
