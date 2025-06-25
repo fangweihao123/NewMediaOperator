@@ -102,82 +102,90 @@ module.exports = () => {
             subtitle,
             video_prompt 
         } = req.body;
-        
-        console.log('收到上传请求:', { profileId, title });
-        
-        const service = serviceManager.getService(profileId);
-        const taskScheduleService = service.taskScheduleService;
-        video_prompt += ' --rt 9:16 --dur 10 --rs 480p'
-        let videoPath = video;
-        let tempFilePath = null;
-        
-        // 创建AI视频生成和上传的Promise
-        const processVideo = new Promise(async (resolve, reject) => {
-            try {
-                console.log('开始AI视频生成流程...');
-                const videoUrl = await generateAIVideo(bgm, subtitle, video_prompt);
-                tempFilePath = await downloadVideo(videoUrl);
-                videoPath = tempFilePath;
-                console.log('AI视频处理完成，本地路径:', videoPath);
-                resolve();
-            } catch (error) {
-                console.error('AI视频生成失败:', error);
-                reject(new Error('AI视频生成失败: ' + error.message));
-            }
-        });
 
-
-        processVideo.then(() => {
-            console.log('AI视频处理完成，本地路径:', videoPath);
-        });
-        
-        // 上传任务函数
-        const uploadTask = async () => {
-            try {
-                await service.seleniumService.uploadVideo(title, description, videoPath);
-                
-                if (comment_content) {
-                    taskScheduleService.addDelayedTask(async () => {
-                        await service.seleniumService.commentVideo(title, description, comment_content);
-                    }, 60000);
-                }
-                
-                // 如果是AI生成的视频，上传完成后清理临时文件
-                if (tempFilePath) {
-                    // 延迟清理，确保上传完成
-                    setTimeout(() => {
-                        cleanupTempFile(tempFilePath);
-                    }, 5000);
-                }
-            } catch (error) {
-                console.error('视频上传失败:', error);
-                // 上传失败时也要清理临时文件
-                if (tempFilePath) {
-                    cleanupTempFile(tempFilePath);
-                }
-                throw error;
-            }
-        };
-        
-        // 处理视频生成和任务调度
-        processVideo.then(() => {
-            if (scheduled) {
-                taskScheduleService.addScheduledTask(uploadTask, scheduledTime);
-            } else {
-                taskScheduleService.addTask(uploadTask);
-            }
-        }).catch((error) => {
-            console.error('视频处理失败:', error);
-            return res.status(500).json({ 
-                success: false, 
-                message: error.message 
-            });
-        });
         res.json({ 
             success: true,
             message: 'AI视频生成和上传任务已添加'
         });
+
+        // ✅ 异步处理视频生成，完全不阻塞响应
+        processVideoAsync(req.body).catch(error => {
+            console.error('后台视频处理失败:', error);
+        });
+        
     });
+
+    async function processVideoAsync(requestData) {
+        const { 
+            profileId, 
+            title, 
+            description, 
+            bgm, 
+            subtitle, 
+            video_prompt, 
+            comment_content, 
+            scheduled, 
+            scheduledTime 
+        } = requestData;
+        
+        let tempFilePath = null;
+        
+        try {
+            console.log(`[${profileId}] 开始后台AI视频生成...`);
+            
+            const service = serviceManager.getService(profileId);
+            const taskScheduleService = service.taskScheduleService;
+            const finalVideoPrompt = video_prompt + ' --rt 9:16 --dur 10 --rs 480p';
+            
+            // 生成AI视频
+            const videoUrl = await generateAIVideo(bgm, subtitle, finalVideoPrompt);
+            console.log(`[${profileId}] AI视频生成完成，开始下载...`);
+            
+            // 下载视频
+            tempFilePath = await downloadVideo(videoUrl);
+            console.log(`[${profileId}] 视频下载完成，添加到上传队列...`);
+            
+            // 创建上传任务
+            const uploadTask = async () => {
+                try {
+                    await service.seleniumService.uploadVideo(title, description, tempFilePath);
+                    console.log(`[${profileId}] 视频上传完成: ${title}`);
+                    
+                    if (comment_content) {
+                        taskScheduleService.addDelayedTask(async () => {
+                            await service.seleniumService.commentVideo(title, description, comment_content);
+                        }, 60000);
+                    }
+                    
+                    // 清理临时文件
+                    setTimeout(() => {
+                        cleanupTempFile(tempFilePath);
+                    }, 5000);
+                    
+                } catch (error) {
+                    console.error(`[${profileId}] 视频上传失败:`, error);
+                    if (tempFilePath) {
+                        cleanupTempFile(tempFilePath);
+                    }
+                    throw error;
+                }
+            };
+            
+            // 添加到任务队列
+            if (scheduled && scheduledTime) {
+                taskScheduleService.addScheduledTask(uploadTask, scheduledTime);
+            } else {
+                taskScheduleService.addTask(uploadTask);
+            }
+            
+        } catch (error) {
+            console.error(`[${profileId}] 后台视频处理失败:`, error);
+            if (tempFilePath) {
+                cleanupTempFile(tempFilePath);
+            }
+            // 这里可以添加失败通知机制
+        }
+    }
     
     router.post('/delete', async (req, res) => {
         const { profileId, title } = req.body;
