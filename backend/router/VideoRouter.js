@@ -18,35 +18,33 @@ module.exports = () => {
     
     // AI视频生成函数
     const generateAIVideo = async (bgm, subtitle, video_prompt) => {
-        return generateAIVideoLimit(async () => {
-            try {
-                console.log('开始生成AI视频...', { bgm, subtitle, video_prompt });
-                const generateAIVideoData = {
-                    "parameters": {
-                        "bgm": bgm,
-                        "subtitle": subtitle,
-                        "videoprompt": video_prompt
-                    },
-                    "workflow_id": "7513593541714673705"
-                };
-                
-                const response = await axios.post('https://api.coze.cn/v1/workflow/run', generateAIVideoData, {
-                    headers: {
-                        'Authorization': 'Bearer pat_a6b6pXlv8V7ypbsArQF3DAxCmsZ7EYvNPwqSQZU7kUfxqhZeGgEzcz0vzm7qO1rA',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                const data = JSON.parse(response.data.data);
-                const video_url = data.output;
-                console.log('AI视频生成成功，URL:', video_url);
-                
-                return video_url;
-            } catch (error) {
-                console.error('AI视频生成失败:', error);
-                throw new Error('AI视频生成失败: ' + error.message);
-            }
-        });
+        try {
+            console.log('开始生成AI视频...', { bgm, subtitle, video_prompt });
+            const generateAIVideoData = {
+                "parameters": {
+                    "bgm": bgm,
+                    "subtitle": subtitle,
+                    "videoprompt": video_prompt
+                },
+                "workflow_id": "7513593541714673705"
+            };
+            
+            const response = await axios.post('https://api.coze.cn/v1/workflow/run', generateAIVideoData, {
+                headers: {
+                    'Authorization': 'Bearer pat_a6b6pXlv8V7ypbsArQF3DAxCmsZ7EYvNPwqSQZU7kUfxqhZeGgEzcz0vzm7qO1rA',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = JSON.parse(response.data.data);
+            const video_url = data.output;
+            console.log('AI视频生成成功，URL:', video_url);
+            
+            return video_url;
+        } catch (error) {
+            console.error('AI视频生成失败:', error);
+            throw new Error('AI视频生成失败: ' + error.message);
+        }
     };
     
     // 下载视频到本地
