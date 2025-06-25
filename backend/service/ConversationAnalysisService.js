@@ -187,8 +187,7 @@ class ConversationAnalysisService {
                 // 如果存在则更新
                 await existingResult.update({
                     nicknames: JSON.stringify(analysisData.nicknames || []),
-                    contacts: JSON.stringify(analysisData.contacts || []),
-                    analyzed_at: new Date()
+                    contacts: JSON.stringify(analysisData.contacts || [])
                 });
             } else {
                 // 如果不存在则创建新记录
