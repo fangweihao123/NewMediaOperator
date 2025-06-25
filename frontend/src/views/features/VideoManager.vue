@@ -176,16 +176,16 @@ export default {
     showUploadDialog() {
       this.uploadDialogVisible = true;
       this.uploadForm = {
-        title: '',
-        description: '',
-        comment_content: '',
+        title: '只投资不管理',
+        description: '#资本',
+        comment_content: '点我头像',
         path: '',
         scheduled: false,
         scheduledTime: null,
         timeTemplate: '',
-        bgm: '',
-        subtitle: '',
-        video_prompt: '',
+        bgm: '轻快',
+        subtitle: '讲讲你的项目\n只出资不参与管理\n100W起投\n敢不敢接受？\n(已投上百项目)\n不靠谱的勿扰',
+        video_prompt: '一个被森林包围的池塘',
       };
     },
 

@@ -107,23 +107,29 @@ module.exports = () => {
         
         const service = serviceManager.getService(profileId);
         const taskScheduleService = service.taskScheduleService;
-        video_prompt += ' --rt 9:16 --dur 10 --rs 1080p'
-
+        video_prompt += ' --rt 9:16 --dur 10 --rs 480p'
         let videoPath = video;
         let tempFilePath = null;
-        try {
-            console.log('开始AI视频生成流程...');
-            const videoUrl = await generateAIVideo(bgm, subtitle, video_prompt);
-            tempFilePath = await downloadVideo(videoUrl);
-            videoPath = tempFilePath;
+        
+        // 创建AI视频生成和上传的Promise
+        const processVideo = new Promise(async (resolve, reject) => {
+            try {
+                console.log('开始AI视频生成流程...');
+                const videoUrl = await generateAIVideo(bgm, subtitle, video_prompt);
+                tempFilePath = await downloadVideo(videoUrl);
+                videoPath = tempFilePath;
+                console.log('AI视频处理完成，本地路径:', videoPath);
+                resolve();
+            } catch (error) {
+                console.error('AI视频生成失败:', error);
+                reject(new Error('AI视频生成失败: ' + error.message));
+            }
+        });
+
+
+        processVideo.then(() => {
             console.log('AI视频处理完成，本地路径:', videoPath);
-        } catch (error) {
-            console.error('AI视频生成失败:', error);
-            return res.status(500).json({ 
-                success: false, 
-                message: 'AI视频生成失败: ' + error.message 
-            });
-        }
+        });
         
         // 上传任务函数
         const uploadTask = async () => {
@@ -153,12 +159,20 @@ module.exports = () => {
             }
         };
         
-        if (scheduled) {
-            taskScheduleService.addScheduledTask(uploadTask, scheduledTime);
-        } else {
-            taskScheduleService.addTask(uploadTask);
-        }
-        
+        // 处理视频生成和任务调度
+        processVideo.then(() => {
+            if (scheduled) {
+                taskScheduleService.addScheduledTask(uploadTask, scheduledTime);
+            } else {
+                taskScheduleService.addTask(uploadTask);
+            }
+        }).catch((error) => {
+            console.error('视频处理失败:', error);
+            return res.status(500).json({ 
+                success: false, 
+                message: error.message 
+            });
+        });
         res.json({ 
             success: true,
             message: 'AI视频生成和上传任务已添加'
