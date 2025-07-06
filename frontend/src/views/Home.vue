@@ -16,9 +16,6 @@
           <el-menu-item index="analysis">
             <span>对话分析</span>
           </el-menu-item>
-          <el-menu-item index="account">
-            <span>账号管理</span>
-          </el-menu-item>
         </el-menu>
       </el-aside>
       <el-main>

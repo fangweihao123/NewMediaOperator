@@ -100,7 +100,8 @@ module.exports = () => {
             scheduledTime,
             bgm,
             subtitle,
-            video_prompt 
+            video_prompt,
+            materialId 
         } = req.body;
 
         res.json({ 
@@ -115,6 +116,84 @@ module.exports = () => {
         
     });
 
+    async function processVideoUrlAsync(requestData) {
+        const { 
+            profileId, 
+            title, 
+            description, 
+            videoUrl, 
+            comment_content, 
+            scheduled, 
+            scheduledTime,
+            materialId 
+        } = requestData;
+        
+        let tempFilePath = null;
+        
+        try {
+            console.log(`[${profileId}] 开始处理视频链接...`, videoUrl);
+            
+            const service = serviceManager.getService(profileId);
+            const taskScheduleService = service.taskScheduleService;
+            
+            // 下载视频链接
+            tempFilePath = await downloadVideoFromUrl(videoUrl);
+            console.log(`[${profileId}] 视频链接下载完成，添加到上传队列...`);
+            
+            // 创建上传任务
+            const uploadTask = async () => {
+                try {
+                    // 如果有素材ID，使用素材文件
+                    let uploadFilePath = tempFilePath;
+                    if (materialId) {
+                        const materialPath = path.join(__dirname, '../materials', profileId, materialId);
+                        if (fs.existsSync(materialPath)) {
+                            uploadFilePath = materialPath;
+                            console.log(`[${profileId}] 使用素材文件: ${materialPath}`);
+                        }
+                    }
+                    
+                    await service.seleniumService.uploadVideo(title, description, uploadFilePath);
+                    console.log(`[${profileId}] 视频上传完成: ${title}`);
+                    
+                    if (comment_content) {
+                        taskScheduleService.addDelayedTask(async () => {
+                            await service.seleniumService.commentVideo(title, description, comment_content);
+                        }, 60000);
+                    }
+                    
+                    // 清理临时文件（如果不是素材文件）
+                    if (uploadFilePath === tempFilePath) {
+                        setTimeout(() => {
+                            cleanupTempFile(tempFilePath);
+                        }, 5000);
+                    }
+                    
+                } catch (error) {
+                    console.error(`[${profileId}] 视频上传失败:`, error);
+                    if (tempFilePath && tempFilePath !== uploadFilePath) {
+                        cleanupTempFile(tempFilePath);
+                    }
+                    throw error;
+                }
+            };
+            
+            // 添加到任务队列
+            if (scheduled && scheduledTime) {
+                taskScheduleService.addScheduledTask(uploadTask, scheduledTime);
+            } else {
+                taskScheduleService.addTask(uploadTask);
+            }
+            
+        } catch (error) {
+            console.error(`[${profileId}] 后台视频链接处理失败:`, error);
+            if (tempFilePath) {
+                cleanupTempFile(tempFilePath);
+            }
+            // 这里可以添加失败通知机制
+        }
+    }
+    
     async function processVideoAsync(requestData) {
         const { 
             profileId, 
@@ -125,7 +204,8 @@ module.exports = () => {
             video_prompt, 
             comment_content, 
             scheduled, 
-            scheduledTime 
+            scheduledTime,
+            materialId 
         } = requestData;
         
         let tempFilePath = null;
@@ -148,7 +228,17 @@ module.exports = () => {
             // 创建上传任务
             const uploadTask = async () => {
                 try {
-                    await service.seleniumService.uploadVideo(title, description, tempFilePath);
+                    // 如果有素材ID，使用素材文件
+                    let uploadFilePath = tempFilePath;
+                    if (materialId) {
+                        const materialPath = path.join(__dirname, '../materials', profileId, materialId);
+                        if (fs.existsSync(materialPath)) {
+                            uploadFilePath = materialPath;
+                            console.log(`[${profileId}] 使用素材文件: ${materialPath}`);
+                        }
+                    }
+                    
+                    await service.seleniumService.uploadVideo(title, description, uploadFilePath);
                     console.log(`[${profileId}] 视频上传完成: ${title}`);
                     
                     if (comment_content) {
@@ -157,14 +247,16 @@ module.exports = () => {
                         }, 60000);
                     }
                     
-                    // 清理临时文件
-                    setTimeout(() => {
-                        cleanupTempFile(tempFilePath);
-                    }, 5000);
+                    // 清理临时文件（如果不是素材文件）
+                    if (uploadFilePath === tempFilePath) {
+                        setTimeout(() => {
+                            cleanupTempFile(tempFilePath);
+                        }, 5000);
+                    }
                     
                 } catch (error) {
                     console.error(`[${profileId}] 视频上传失败:`, error);
-                    if (tempFilePath) {
+                    if (tempFilePath && tempFilePath !== uploadFilePath) {
                         cleanupTempFile(tempFilePath);
                     }
                     throw error;
@@ -241,6 +333,111 @@ module.exports = () => {
             res.status(500).json({ error: error.message });
         }
     });
+    
+    // 新增：处理视频链接上传
+    router.post('/uploadUrl', async (req, res) => {
+        let { 
+            profileId, 
+            title, 
+            description, 
+            videoUrl, 
+            comment_content, 
+            scheduled, 
+            scheduledTime,
+            materialId 
+        } = req.body;
+
+        res.json({ 
+            success: true,
+            message: '视频链接上传任务已添加'
+        });
+
+        // ✅ 异步处理视频链接下载和上传，完全不阻塞响应
+        processVideoUrlAsync(req.body).catch(error => {
+            console.error('后台视频链接处理失败:', error);
+        });
+        
+    });
+    
+    // 新增：处理素材库视频上传
+    router.post('/upload-material', async (req, res) => {
+        let { 
+            profileId, 
+            title, 
+            description, 
+            materialId, 
+            comment_content, 
+            scheduled, 
+            scheduledTime
+        } = req.body;
+
+        res.json({ 
+            success: true,
+            message: '素材库视频上传任务已添加'
+        });
+
+        // ✅ 异步处理素材库视频上传，完全不阻塞响应
+        processMaterialVideoAsync(req.body).catch(error => {
+            console.error('后台素材库视频处理失败:', error);
+        });
+        
+    });
+
+    async function processMaterialVideoAsync(requestData) {
+        const { 
+            profileId, 
+            title, 
+            description, 
+            materialId, 
+            comment_content, 
+            scheduled, 
+            scheduledTime
+        } = requestData;
+        
+        try {
+            console.log(`[${profileId}] 开始处理素材库视频...`, { materialId, title });
+            
+            const service = serviceManager.getService(profileId);
+            const taskScheduleService = service.taskScheduleService;
+            
+            // 验证素材是否存在
+            const materialPath = path.join(__dirname, '../materials', profileId, materialId);
+            if (!fs.existsSync(materialPath)) {
+                throw new Error(`素材文件不存在: ${materialId}`);
+            }
+            
+            console.log(`[${profileId}] 素材文件验证通过，添加到上传队列...`);
+            
+            // 创建上传任务
+            const uploadTask = async () => {
+                try {
+                    await service.seleniumService.uploadVideo(title, description, materialPath);
+                    console.log(`[${profileId}] 素材库视频上传完成: ${title}`);
+                    
+                    if (comment_content) {
+                        taskScheduleService.addDelayedTask(async () => {
+                            await service.seleniumService.commentVideo(title, description, comment_content);
+                        }, 60000);
+                    }
+                    
+                } catch (error) {
+                    console.error(`[${profileId}] 素材库视频上传失败:`, error);
+                    throw error;
+                }
+            };
+            
+            // 添加到任务队列
+            if (scheduled && scheduledTime) {
+                taskScheduleService.addScheduledTask(uploadTask, scheduledTime);
+            } else {
+                taskScheduleService.addTask(uploadTask);
+            }
+            
+        } catch (error) {
+            console.error(`[${profileId}] 后台素材库视频处理失败:`, error);
+            // 这里可以添加失败通知机制
+        }
+    }
     
     return router;
 }

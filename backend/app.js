@@ -7,6 +7,7 @@ const AdsPowerService = require('./service/AdsPowerService');
 const AdsPowerRouter = require('./router/AdsPowerRouter');
 const VideoRouter = require('./router/VideoRouter');
 const MessageRouter = require('./router/MessageRouter');
+const MaterialRouter = require('./router/MaterialRouter');
 const dbManager = require('./Manager/DataBaseManager');
 const serviceManager = require('./Manager/ServiceManager');
 require('dotenv').config();
@@ -57,8 +58,9 @@ app.use('/api/messages', (req, res, next) => {
 });
 
 app.use('/api/adsPower', AdsPowerRouter());
+app.use('/api/selenium', MessageRouter());
 app.use('/api/videos', VideoRouter());
-app.use('/api/messages', MessageRouter());
+app.use('/api/materials', MaterialRouter());
 
 app.get('/api/userinfo', async (req, res) => {
     const userInfos = await douyinUserService.GetAuthUserInfo();
