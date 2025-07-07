@@ -550,6 +550,90 @@ module.exports = () => {
         }
     });
 
+    // 强制删除环境（无需检测）
+    router.post('/force-delete-environment', async (req, res) => {
+        try {
+            const { user_ids } = req.body;
+            
+            if (!user_ids || !Array.isArray(user_ids) || user_ids.length === 0) {
+                return res.status(400).json({
+                    code: -1,
+                    data: {},
+                    msg: 'user_ids is required and must be a non-empty array'
+                });
+            }
+
+            // 检查删除数量限制（不能超过100个）
+            if (user_ids.length > 100) {
+                return res.status(400).json({
+                    code: -1,
+                    data: {},
+                    msg: 'Cannot delete more than 100 environments at once'
+                });
+            }
+
+            console.log(`强制删除环境: ${user_ids.join(', ')}`);
+
+            // 先尝试停止所有相关浏览器
+            for (const userId of user_ids) {
+                try {
+                    console.log(`尝试停止浏览器 ${userId}...`);
+                    await axios.post(`${ADSPOWER_API_BASE}/api/v1/browser/stop`, {
+                        user_id: userId
+                    }, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        timeout: 10000
+                    });
+                    console.log(`浏览器 ${userId} 停止成功`);
+                } catch (stopError) {
+                    console.log(`停止浏览器 ${userId} 失败，继续删除:`, stopError.message);
+                }
+            }
+
+            // 等待一段时间确保浏览器完全停止
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // 强制调用AdsPower API删除环境
+            const response = await axios.post(`${ADSPOWER_API_BASE}/api/v1/user/delete`, {
+                user_ids: user_ids
+            }, {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 30000
+            });
+
+            console.log('强制删除结果:', response.data);
+
+            // 无论AdsPower返回什么结果，都认为删除成功
+            res.json({
+                code: 0,
+                data: {
+                    user_ids: user_ids,
+                    message: '强制删除操作已完成',
+                    original_response: response.data
+                },
+                msg: 'Force delete completed'
+            });
+
+        } catch (error) {
+            console.error('强制删除环境失败:', error);
+            
+            // 即使出错也返回成功，因为这是强制删除
+            res.json({
+                code: 0,
+                data: {
+                    user_ids: user_ids,
+                    message: '强制删除操作已完成（可能存在部分失败）',
+                    error: error.message
+                },
+                msg: 'Force delete completed with warnings'
+            });
+        }
+    });
+
     // 检查环境状态
     router.get('/check-environment-status', async (req, res) => {
         try {

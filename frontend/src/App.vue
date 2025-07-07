@@ -148,6 +148,8 @@
           >
             <template #default>
               即将删除 {{ selectedAccounts.length }} 个账号，此操作不可恢复！
+              <br>
+              <strong>注意：</strong>如果账号正在使用中，系统会提示您选择强制删除。
             </template>
           </el-alert>
         </div>
@@ -160,6 +162,12 @@
             @click="handleDeleteAccounts"
             :disabled="selectedAccounts.length === 0 || isDeletingAccounts">
             {{ getDeleteButtonText() }}
+          </el-button>
+          <el-button 
+            type="warning" 
+            @click="handleForceDeleteAccounts(selectedAccounts.map(account => account.user_id))"
+            :disabled="selectedAccounts.length === 0 || isDeletingAccounts">
+            {{ getForceDeleteButtonText() }}
           </el-button>
         </span>
       </template>
@@ -440,21 +448,26 @@ export default {
           if (response.data.data && response.data.data.error_type === 'in_use') {
             this.$message.error(response.data.data.message);
             
-            // 显示详细错误信息对话框
-            this.$alert(
+            // 显示详细错误信息对话框，并提供强制删除选项
+            this.$confirm(
               `删除失败：${response.data.data.message}\n\n` +
               `无法删除的环境ID：${response.data.data.user_ids.join(', ')}\n\n` +
-              `解决方案：\n` +
-              `1. 关闭相关浏览器窗口\n` +
-              `2. 确保没有其他程序正在使用这些环境\n` +
-              `3. 重新尝试删除`,
+              `是否要强制删除这些环境？\n` +
+              `注意：强制删除会先停止所有相关浏览器，然后强制删除环境。`,
               '删除失败',
               {
-                confirmButtonText: '确定',
-                type: 'error',
+                confirmButtonText: '强制删除',
+                cancelButtonText: '取消',
+                type: 'warning',
                 dangerouslyUseHTMLString: false
               }
-            );
+            ).then(async () => {
+              // 用户选择强制删除
+              await this.handleForceDeleteAccounts(user_ids);
+            }).catch(() => {
+              // 用户取消
+              console.log('用户取消强制删除');
+            });
           } else {
             this.$message.error(`删除失败: ${response.data.msg}`);
           }
@@ -466,12 +479,67 @@ export default {
         this.isDeletingAccounts = false;
       }
     },
+
+    async handleForceDeleteAccounts(user_ids) {
+      try {
+        this.isDeletingAccounts = true;
+        
+        // 显示确认对话框
+        await this.$confirm(
+          `确定要强制删除以下环境吗？\n` +
+          `环境ID：${user_ids.join(', ')}\n\n` +
+          `警告：此操作将：\n` +
+          `1. 强制停止所有相关浏览器\n` +
+          `2. 强制删除环境（即使正在使用中）\n` +
+          `3. 可能导致数据丢失\n\n` +
+          `此操作不可撤销！`,
+          '强制删除确认',
+          {
+            confirmButtonText: '确定强制删除',
+            cancelButtonText: '取消',
+            type: 'warning',
+            dangerouslyUseHTMLString: false
+          }
+        );
+        
+        const response = await api.post('/adsPower/force-delete-environment', {
+          user_ids: user_ids
+        });
+        
+        if (response.data.code === 0) {
+          this.$message.success(`强制删除完成：${response.data.data.message}`);
+          this.deleteAccountDialogVisible = false;
+          this.selectedAccounts = [];
+          
+          // 刷新账号列表
+          await this.getActiveAccount();
+        } else {
+          this.$message.error(`强制删除失败: ${response.data.msg}`);
+        }
+      } catch (error) {
+        if (error === 'cancel') {
+          console.log('用户取消强制删除');
+          return;
+        }
+        console.error('强制删除账号失败:', error);
+        this.$message.error('强制删除账号失败: ' + (error.response?.data?.error || error.message));
+      } finally {
+        this.isDeletingAccounts = false;
+      }
+    },
     
     getDeleteButtonText() {
       if (this.isDeletingAccounts) {
         return '删除中...';
       }
       return `删除选中账号 (${this.selectedAccounts.length})`;
+    },
+
+    getForceDeleteButtonText() {
+      if (this.isDeletingAccounts) {
+        return '强制删除中...';
+      }
+      return `强制删除选中账号 (${this.selectedAccounts.length})`;
     },
     
     async checkEnvironmentStatus() {
