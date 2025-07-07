@@ -48,8 +48,8 @@ module.exports = () => {
     // 获取素材列表
     router.get('/', async (req, res) => {
         try {
-            const { profile_id } = req.query;
-            const materialsPath = path.join(materialDir, profile_id);
+            // 使用统一的素材目录，所有账号公用
+            const materialsPath = materialDir;
             
             if (!fs.existsSync(materialsPath)) {
                 return res.json({ materials: [] });
@@ -75,7 +75,7 @@ module.exports = () => {
                     description: '',
                     type: 'video',
                     size: stats.size,
-                    url: `/materials/${profile_id}/${file}`,
+                    url: `/materials/${file}`,
                     createdAt: stats.birthtime
                 };
 
@@ -105,20 +105,14 @@ module.exports = () => {
     // 上传本地素材
     router.post('/upload', upload.single('file'), async (req, res) => {
         try {
-            const { profileId, name, description } = req.body;
+            const { name, description } = req.body;
             
             if (!req.file) {
                 return res.status(400).json({ error: '请选择文件' });
             }
 
-            // 创建用户素材目录
-            const userMaterialDir = path.join(materialDir, profileId);
-            if (!fs.existsSync(userMaterialDir)) {
-                fs.mkdirSync(userMaterialDir, { recursive: true });
-            }
-
-            // 移动文件到用户目录
-            const newFilePath = path.join(userMaterialDir, req.file.filename);
+            // 使用统一的素材目录
+            const newFilePath = path.join(materialDir, req.file.filename);
             fs.renameSync(req.file.path, newFilePath);
 
             // 确定文件类型
@@ -135,7 +129,7 @@ module.exports = () => {
                 description: description || '',
                 type: materialType,
                 size: req.file.size,
-                url: `/materials/${profileId}/${req.file.filename}`,
+                url: `/materials/${req.file.filename}`,
                 createdAt: new Date().toISOString()
             };
 
@@ -156,16 +150,10 @@ module.exports = () => {
     // 上传链接素材
     router.post('/uploadUrl', async (req, res) => {
         try {
-            const { profileId, url, name, description } = req.body;
+            const { url, name, description } = req.body;
 
             if (!url) {
                 return res.status(400).json({ error: '请提供素材链接' });
-            }
-
-            // 创建用户素材目录
-            const userMaterialDir = path.join(materialDir, profileId);
-            if (!fs.existsSync(userMaterialDir)) {
-                fs.mkdirSync(userMaterialDir, { recursive: true });
             }
 
             // 下载文件
@@ -178,7 +166,7 @@ module.exports = () => {
             });
 
             const filename = crypto.randomUUID() + path.extname(url) || '.mp4';
-            const filePath = path.join(userMaterialDir, filename);
+            const filePath = path.join(materialDir, filename);
             
             const writer = fs.createWriteStream(filePath);
             response.data.pipe(writer);
@@ -205,7 +193,7 @@ module.exports = () => {
                 description: description || '',
                 type: materialType,
                 size: stats.size,
-                url: `/materials/${profileId}/${filename}`,
+                url: `/materials/${filename}`,
                 createdAt: new Date().toISOString()
             };
 
@@ -227,10 +215,8 @@ module.exports = () => {
     router.delete('/:materialId', async (req, res) => {
         try {
             const { materialId } = req.params;
-            const { profileId } = req.query;
 
-            const userMaterialDir = path.join(materialDir, profileId);
-            const filePath = path.join(userMaterialDir, materialId);
+            const filePath = path.join(materialDir, materialId);
             const infoPath = filePath + '.json';
 
             // 删除文件和信息文件
@@ -249,10 +235,10 @@ module.exports = () => {
     });
 
     // 提供素材文件访问
-    router.get('/:profileId/:filename', (req, res) => {
+    router.get('/:filename', (req, res) => {
         try {
-            const { profileId, filename } = req.params;
-            const filePath = path.join(materialDir, profileId, filename);
+            const { filename } = req.params;
+            const filePath = path.join(materialDir, filename);
             
             if (!fs.existsSync(filePath)) {
                 return res.status(404).json({ error: '文件不存在' });

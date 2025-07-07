@@ -5,24 +5,29 @@
           <template #header>
             <div class="card-header">
               <span>视频上传</span>
+              <div class="upload-actions">
+                <el-button 
+                  type="success" 
+                  @click="showAIVideoDialog"
+                  size="large"
+                >
+                  <el-icon><UploadFilled /></el-icon>
+                  AI生成视频
+                </el-button>
+              </div>
             </div>
           </template>
           
           <div class="upload-selection-area">
-            <el-radio-group v-model="uploadMode" class="upload-mode-selector">
-              <el-radio-button label="ai">AI生成视频</el-radio-button>
-              <el-radio-button label="material" :disabled="!selectedMaterial">使用素材库视频</el-radio-button>
-            </el-radio-group>
-            
             <div class="upload-buttons">
               <el-button 
                 type="primary" 
                 @click="showUploadDialog"
-                :disabled="uploadMode === 'material' && !selectedMaterial"
+                :disabled="!selectedMaterial"
                 size="large"
               >
                 <el-icon><UploadFilled /></el-icon>
-                上传视频
+                使用素材上传视频
               </el-button>
             </div>
           </div>
@@ -239,61 +244,40 @@
           </template>
         </el-dialog>
 
-        <!-- 上传视频对话框 -->
+        <!-- 使用素材上传视频对话框 -->
         <el-dialog
           v-model="uploadDialogVisible"
-          :title="uploadMode === 'ai' ? 'AI生成视频' : '使用素材库视频'"
+          title="使用素材库视频"
           width="700px"
         >
           <el-form :model="uploadForm" label-width="120px">
-            <!-- AI生成视频的表单字段 -->
-            <template v-if="uploadMode === 'ai'">
-              <el-form-item label="背景音乐关键词">
-                <el-input v-model="uploadForm.bgm" placeholder="请输入背景音乐关键词"></el-input>
-              </el-form-item>
-              <el-form-item label="视频背景字幕">
-                <el-input 
-                  v-model="uploadForm.subtitle" 
-                  type="textarea" 
-                  :rows="4"
-                  placeholder="请输入背景字幕，支持多行输入"
-                  resize="vertical">
-                </el-input>
-              </el-form-item>
-              <el-form-item label="AI生成视频关键词">
-                <el-input v-model="uploadForm.video_prompt" placeholder="请输入AI生成视频关键词"></el-input>
-              </el-form-item>
-            </template>
-
             <!-- 素材库视频的表单字段 -->
-            <template v-if="uploadMode === 'material'">
-              <el-form-item label="选择的素材">
-                <div class="selected-material-display">
-                  <div class="material-preview-small">
-                    <video 
-                      v-if="selectedMaterial?.type === 'video'" 
-                      :src="getMaterialUrl(selectedMaterial.url)" 
-                      preload="metadata"
-                      class="material-video-small"
-                      muted
-                    ></video>
-                    <img 
-                      v-else-if="selectedMaterial?.type === 'image'" 
-                      :src="getMaterialUrl(selectedMaterial.url)" 
-                      class="material-image-small"
-                      alt="素材预览"
-                    />
-                    <div v-else class="material-placeholder-small">
-                      <el-icon><Document /></el-icon>
-                    </div>
-                  </div>
-                  <div class="material-info-small">
-                    <div class="material-name-small">{{ selectedMaterial?.name }}</div>
-                    <div class="material-type-small">{{ getMaterialTypeText(selectedMaterial?.type) }}</div>
+            <el-form-item label="选择的素材">
+              <div class="selected-material-display">
+                <div class="material-preview-small">
+                  <video 
+                    v-if="selectedMaterial?.type === 'video'" 
+                    :src="getMaterialUrl(selectedMaterial.url)" 
+                    preload="metadata"
+                    class="material-video-small"
+                    muted
+                  ></video>
+                  <img 
+                    v-else-if="selectedMaterial?.type === 'image'" 
+                    :src="getMaterialUrl(selectedMaterial.url)" 
+                    class="material-image-small"
+                    alt="素材预览"
+                  />
+                  <div v-else class="material-placeholder-small">
+                    <el-icon><Document /></el-icon>
                   </div>
                 </div>
-              </el-form-item>
-            </template>
+                <div class="material-info-small">
+                  <div class="material-name-small">{{ selectedMaterial?.name }}</div>
+                  <div class="material-type-small">{{ getMaterialTypeText(selectedMaterial?.type) }}</div>
+                </div>
+              </div>
+            </el-form-item>
 
             <!-- 通用表单字段 -->
             <el-form-item label="视频标题">
@@ -343,6 +327,79 @@
             </span>
           </template>
         </el-dialog>
+
+        <!-- AI生成视频对话框 -->
+        <el-dialog
+          v-model="aiVideoDialogVisible"
+          title="AI生成视频"
+          width="700px"
+        >
+          <el-form :model="aiVideoForm" label-width="120px">
+            <!-- AI生成视频的表单字段 -->
+            <el-form-item label="背景音乐关键词">
+              <el-input v-model="aiVideoForm.bgm" placeholder="请输入背景音乐关键词"></el-input>
+            </el-form-item>
+            <el-form-item label="视频背景字幕">
+              <el-input 
+                v-model="aiVideoForm.subtitle" 
+                type="textarea" 
+                :rows="4"
+                placeholder="请输入背景字幕，支持多行输入"
+                resize="vertical">
+              </el-input>
+            </el-form-item>
+            <el-form-item label="AI生成视频关键词">
+              <el-input v-model="aiVideoForm.video_prompt" placeholder="请输入AI生成视频关键词"></el-input>
+            </el-form-item>
+
+            <!-- 通用表单字段 -->
+            <el-form-item label="视频标题">
+              <el-input v-model="aiVideoForm.title" placeholder="请输入视频标题"></el-input>
+            </el-form-item>
+            <el-form-item label="视频描述">
+              <el-input v-model="aiVideoForm.description" placeholder="请输入视频描述"></el-input>
+            </el-form-item>
+            <el-form-item label="首评内容">
+              <el-input v-model="aiVideoForm.comment_content" placeholder="请输入首评内容"></el-input>
+            </el-form-item>  
+
+            <el-form-item label="定时发布">
+              <el-switch v-model="aiVideoForm.scheduled" active-text="开启定时" inactive-text="立即发布"></el-switch>
+            </el-form-item>
+            <el-form-item v-if="aiVideoForm.scheduled" label="发布时间">
+              <el-date-picker
+                v-model="aiVideoForm.scheduledTime"
+                type="datetime"
+                placeholder="选择发布时间"
+                :disabled-date="disabledDate"
+                :disabled-hours="disabledHours"
+                :disabled-minutes="disabledMinutes"
+                style="width: 100%"
+              />
+            </el-form-item>
+            <el-form-item v-if="aiVideoForm.scheduled" label="时间模板">
+              <el-select v-model="aiVideoForm.timeTemplate" placeholder="选择时间模板" @change="applyAITimeTemplate" style="width: 100%">
+                <el-option label="1小时后" value="1hour"></el-option>
+                <el-option label="2小时后" value="2hours"></el-option>
+                <el-option label="明天上午9点" value="tomorrow_9am"></el-option>
+                <el-option label="明天下午2点" value="tomorrow_2pm"></el-option>
+                <el-option label="明天晚上8点" value="tomorrow_8pm"></el-option>
+                <el-option label="后天上午10点" value="day_after_10am"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="aiVideoDialogVisible = false">取消</el-button>
+              <el-button 
+                type="primary" 
+                @click="handleAIVideoUpload"
+                :disabled="isUploadingAI">
+                {{ getAIUploadButtonText() }}
+              </el-button>
+            </span>
+          </template>
+        </el-dialog>
     </div>
     
 </template> 
@@ -368,10 +425,12 @@ export default {
       selectedMaterial: null,
       checkInterval: null,
       uploadDialogVisible: false,
+      aiVideoDialogVisible: false,
       uploadUrlDialogVisible: false,
       uploadMaterialDialogVisible: false,
       uploadMaterialUrlDialogVisible: false,
       isUploading: false,
+      isUploadingAI: false,
       isUploadingUrls: false,
       isUploadingMaterial: false,
       isUploadingMaterialUrl: false,
@@ -379,6 +438,14 @@ export default {
         title: '',
         description: '',
         path: '',
+        scheduled: false,
+        scheduledTime: null,
+        timeTemplate: '',
+        comment_content: '',
+      },
+      aiVideoForm: {
+        title: '',
+        description: '',
         scheduled: false,
         scheduledTime: null,
         timeTemplate: '',
@@ -428,7 +495,7 @@ export default {
       handler(newUserId) {
         console.log("newUserId", newUserId);
         this.getVideosFromAdsPower(newUserId);
-        this.getMaterials(newUserId);
+        this.getMaterials();
       }
     }
   },
@@ -449,13 +516,9 @@ export default {
       console.log("bind again");
     },
 
-    async getMaterials(user_id) {
+    async getMaterials() {
       try {
-        const response = await api.get('/materials', {
-          params: {
-            profile_id: user_id
-          }
-        });
+        const response = await api.get('/materials');
         this.materials = response.data.materials || [];
         console.log('获取到的素材列表:', this.materials);
         
@@ -520,7 +583,7 @@ export default {
         formData.append('file', this.uploadMaterialForm.file);
         formData.append('name', this.uploadMaterialForm.name);
         formData.append('description', this.uploadMaterialForm.description);
-        formData.append('profileId', this.currentUserId);
+
 
         await api.post('/materials/upload', formData, {
           headers: {
@@ -530,7 +593,7 @@ export default {
 
         this.$message.success('素材上传成功');
         this.uploadMaterialDialogVisible = false;
-        this.getMaterials(this.currentUserId);
+        this.getMaterials();
       } catch (error) {
         this.$message.error('素材上传失败: ' + error.message);
       } finally {
@@ -552,7 +615,6 @@ export default {
       this.isUploadingMaterialUrl = true;
       try {
         const uploadData = {
-          profileId: this.currentUserId,
           url: this.uploadMaterialUrlForm.url,
           name: this.uploadMaterialUrlForm.name,
           description: this.uploadMaterialUrlForm.description,
@@ -562,7 +624,7 @@ export default {
 
         this.$message.success('素材上传成功');
         this.uploadMaterialUrlDialogVisible = false;
-        this.getMaterials(this.currentUserId);
+        this.getMaterials();
       } catch (error) {
         this.$message.error('素材上传失败: ' + error.message);
       } finally {
@@ -572,13 +634,9 @@ export default {
 
     async deleteMaterial(materialId) {
       try {
-        await api.delete(`/materials/${materialId}`, {
-          params: {
-            profileId: this.currentUserId
-          }
-        });
+        await api.delete(`/materials/${materialId}`);
         this.$message.success('素材删除成功');
-        this.getMaterials(this.currentUserId);
+        this.getMaterials();
         
         // 如果删除的是当前选中的素材，清除选择
         if (this.selectedMaterial?.id === materialId) {
@@ -609,6 +667,18 @@ export default {
         description: '#资本',
         comment_content: '点我头像',
         path: '',
+        scheduled: false,
+        scheduledTime: null,
+        timeTemplate: '',
+      };
+    },
+
+    showAIVideoDialog() {
+      this.aiVideoDialogVisible = true;
+      this.aiVideoForm = {
+        title: '只投资不管理',
+        description: '#资本',
+        comment_content: '点我头像',
         scheduled: false,
         scheduledTime: null,
         timeTemplate: '',
@@ -751,40 +821,22 @@ export default {
         return;
       }
 
+      if (!this.selectedMaterial) {
+        this.$message.error('请先选择素材');
+        return;
+      }
+
       this.isUploading = true;
       try {
-        let response;
-        
-        if (this.uploadMode === 'ai') {
-          // AI生成视频
-          response = await api.post('/video/upload', {
-            profileId: this.currentUserId,
-            title: this.uploadForm.title,
-            description: this.uploadForm.description,
-            bgm: this.uploadForm.bgm,
-            subtitle: this.uploadForm.subtitle,
-            video_prompt: this.uploadForm.video_prompt,
-            comment_content: this.uploadForm.comment_content,
-            scheduled: this.uploadForm.scheduled,
-            scheduledTime: this.uploadForm.scheduledTime ? this.uploadForm.scheduledTime.toISOString() : null
-          });
-        } else {
-          // 使用素材库视频
-          if (!this.selectedMaterial) {
-            this.$message.error('请先选择素材');
-            return;
-          }
-          
-          response = await api.post('/video/upload-material', {
-            profileId: this.currentUserId,
-            title: this.uploadForm.title,
-            description: this.uploadForm.description,
-            materialId: this.selectedMaterial.id,
-            comment_content: this.uploadForm.comment_content,
-            scheduled: this.uploadForm.scheduled,
-            scheduledTime: this.uploadForm.scheduledTime ? this.uploadForm.scheduledTime.toISOString() : null
-          });
-        }
+        const response = await api.post('/videos/upload-material', {
+          profileId: this.currentUserId,
+          title: this.uploadForm.title,
+          description: this.uploadForm.description,
+          materialId: this.selectedMaterial.id,
+          comment_content: this.uploadForm.comment_content,
+          scheduled: this.uploadForm.scheduled,
+          scheduledTime: this.uploadForm.scheduledTime ? this.uploadForm.scheduledTime.toISOString() : null
+        });
 
         this.$message.success('视频上传任务已添加');
         this.uploadDialogVisible = false;
@@ -795,6 +847,38 @@ export default {
         this.$message.error('上传失败: ' + (error.response?.data?.error || error.message));
       } finally {
         this.isUploading = false;
+      }
+    },
+
+    async handleAIVideoUpload() {
+      if (!this.aiVideoForm.title || !this.aiVideoForm.description) {
+        this.$message.error('请填写视频标题和描述');
+        return;
+      }
+
+      this.isUploadingAI = true;
+      try {
+        const response = await api.post('/video/upload', {
+          profileId: this.currentUserId,
+          title: this.aiVideoForm.title,
+          description: this.aiVideoForm.description,
+          bgm: this.aiVideoForm.bgm,
+          subtitle: this.aiVideoForm.subtitle,
+          video_prompt: this.aiVideoForm.video_prompt,
+          comment_content: this.aiVideoForm.comment_content,
+          scheduled: this.aiVideoForm.scheduled,
+          scheduledTime: this.aiVideoForm.scheduledTime ? this.aiVideoForm.scheduledTime.toISOString() : null
+        });
+
+        this.$message.success('AI视频生成任务已添加');
+        this.aiVideoDialogVisible = false;
+        this.resetAIVideoForm();
+        this.getVideosFromAdsPower(this.currentUserId);
+      } catch (error) {
+        console.error('AI视频生成失败:', error);
+        this.$message.error('AI视频生成失败: ' + (error.response?.data?.error || error.message));
+      } finally {
+        this.isUploadingAI = false;
       }
     },
     async deleteVideo(description) {
@@ -857,11 +941,56 @@ export default {
       
       this.uploadForm.scheduledTime = targetTime;
     },
+
+    applyAITimeTemplate(value) {
+      const now = new Date();
+      let targetTime = new Date();
+      
+      switch (value) {
+        case '1hour':
+          targetTime = new Date(now.getTime() + 60 * 60 * 1000);
+          break;
+        case '2hours':
+          targetTime = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+          break;
+        case 'tomorrow_9am':
+          targetTime = new Date(now);
+          targetTime.setDate(now.getDate() + 1);
+          targetTime.setHours(9, 0, 0, 0);
+          break;
+        case 'tomorrow_2pm':
+          targetTime = new Date(now);
+          targetTime.setDate(now.getDate() + 1);
+          targetTime.setHours(14, 0, 0, 0);
+          break;
+        case 'tomorrow_8pm':
+          targetTime = new Date(now);
+          targetTime.setDate(now.getDate() + 1);
+          targetTime.setHours(20, 0, 0, 0);
+          break;
+        case 'day_after_10am':
+          targetTime = new Date(now);
+          targetTime.setDate(now.getDate() + 2);
+          targetTime.setHours(10, 0, 0, 0);
+          break;
+        default:
+          return;
+      }
+      
+      this.aiVideoForm.scheduledTime = targetTime;
+    },
     getUploadButtonText() {
       if (this.isUploading) {
         return '上传中...';
       }
-      return this.uploadMode === 'ai' ? 'AI生成视频' : '使用素材视频';
+      return '使用素材视频';
+    },
+
+    getAIUploadButtonText() {
+      if (this.isUploadingAI) {
+        return '生成中...';
+      }
+      return 'AI生成视频';
     },
     getUploadUrlButtonText() {
       if (this.uploadUrlForm.scheduled) {
@@ -990,19 +1119,30 @@ export default {
       this.uploadForm = {
         title: '',
         description: '',
-        bgm: '',
-        subtitle: '',
-        video_prompt: '',
         comment_content: '',
         scheduled: false,
         scheduledTime: null,
         timeTemplate: ''
       };
     },
+
+    resetAIVideoForm() {
+      this.aiVideoForm = {
+        title: '',
+        description: '',
+        comment_content: '',
+        scheduled: false,
+        scheduledTime: null,
+        timeTemplate: '',
+        bgm: '',
+        subtitle: '',
+        video_prompt: '',
+      };
+    },
   },
   created() {
     this.getVideosFromAdsPower(this.currentUserId);
-    this.getMaterials(this.currentUserId);
+    this.getMaterials();
   },
   beforeUnmount() {
     if (this.checkInterval) {
@@ -1043,7 +1183,7 @@ export default {
   align-items: center;
 }
 
-.material-actions, .video-actions {
+.material-actions, .video-actions, .upload-actions {
   display: flex;
   gap: 10px;
 }

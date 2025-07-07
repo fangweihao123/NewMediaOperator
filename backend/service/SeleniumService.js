@@ -125,7 +125,7 @@ class SeleniumService {
                 await new Promise(resolve => setTimeout(resolve, 30000));
                 // Click the publish button
                 const publishButton = await this.adsPowerService.driver.wait(
-                    until.elementLocated(By.xpath("//*[@id='DCPF']/div[1]/div[1]/div[1]/div[5]/div[1]/div[1]/div[1]/div[1]/div[1]/button[1]")),
+                    until.elementLocated(By.xpath("/html/body/div[1]/div[1]/div/div[2]/div/div/div/div[2]/div/div/div/div/div[1]/div/div[5]/div/div/div/div/div/span/button")),
                     30000
                 );
                 await publishButton.click();

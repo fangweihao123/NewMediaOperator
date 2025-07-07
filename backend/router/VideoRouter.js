@@ -146,7 +146,7 @@ module.exports = () => {
                     // 如果有素材ID，使用素材文件
                     let uploadFilePath = tempFilePath;
                     if (materialId) {
-                        const materialPath = path.join(__dirname, '../materials', profileId, materialId);
+                        const materialPath = path.join(__dirname, '../materials', materialId);
                         if (fs.existsSync(materialPath)) {
                             uploadFilePath = materialPath;
                             console.log(`[${profileId}] 使用素材文件: ${materialPath}`);
@@ -231,7 +231,7 @@ module.exports = () => {
                     // 如果有素材ID，使用素材文件
                     let uploadFilePath = tempFilePath;
                     if (materialId) {
-                        const materialPath = path.join(__dirname, '../materials', profileId, materialId);
+                        const materialPath = path.join(__dirname, '../materials', materialId);
                         if (fs.existsSync(materialPath)) {
                             uploadFilePath = materialPath;
                             console.log(`[${profileId}] 使用素材文件: ${materialPath}`);
@@ -401,7 +401,7 @@ module.exports = () => {
             const taskScheduleService = service.taskScheduleService;
             
             // 验证素材是否存在
-            const materialPath = path.join(__dirname, '../materials', profileId, materialId);
+            const materialPath = path.join(__dirname, '../materials', materialId);
             if (!fs.existsSync(materialPath)) {
                 throw new Error(`素材文件不存在: ${materialId}`);
             }
