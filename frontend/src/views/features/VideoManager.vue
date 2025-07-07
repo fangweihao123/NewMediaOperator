@@ -400,6 +400,8 @@
             </span>
           </template>
         </el-dialog>
+
+
     </div>
     
 </template> 
@@ -688,6 +690,8 @@ export default {
       };
     },
 
+
+
     // 解析视频链接
     parseVideoUrls() {
       const urls = this.uploadUrlForm.videoUrls
@@ -881,6 +885,8 @@ export default {
         this.isUploadingAI = false;
       }
     },
+
+
     async deleteVideo(description) {
       try {
         await api.post('/videos/delete', {
@@ -992,6 +998,8 @@ export default {
       }
       return 'AI生成视频';
     },
+
+
     getUploadUrlButtonText() {
       if (this.uploadUrlForm.scheduled) {
         return '定时上传';
@@ -1139,6 +1147,8 @@ export default {
         video_prompt: '',
       };
     },
+
+
   },
   created() {
     this.getVideosFromAdsPower(this.currentUserId);
@@ -1186,6 +1196,58 @@ export default {
 .material-actions, .video-actions, .upload-actions {
   display: flex;
   gap: 10px;
+}
+
+.selected-material-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  background-color: #fafafa;
+}
+
+.material-preview-small {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.material-video-small, .material-image-small {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.material-placeholder-small {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #909399;
+  font-size: 16px;
+}
+
+.material-info-small {
+  flex: 1;
+}
+
+.material-name-small {
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.material-type-small {
+  font-size: 12px;
+  color: #909399;
 }
 
 .selected-material-info {

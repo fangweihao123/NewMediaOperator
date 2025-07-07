@@ -26,6 +26,13 @@ class SeleniumService {
             this.videoInfoRefreshHandler = setInterval(async () => {
                 taskManager.addTask(async () => {
                     if (this.adsPowerService.driver) {
+                        // 首先检查登录状态
+                        const isLoggedIn = await this.checkLoginStatus();
+                        if (!isLoggedIn) {
+                            console.log('检测到未登录状态，等待用户扫码登录...');
+                            await this.waitForLogin();
+                        }
+                        
                         await this.adsPowerService.driver.get('https://creator.douyin.com/creator-micro/content/manage?enter_from=publish');
                     }
                     console.log('Successfully fetched video info');
@@ -95,6 +102,73 @@ class SeleniumService {
         } catch (error) {
             console.error('获取视频信息失败:', error);
             throw error;
+        }
+    }
+
+    // 检查登录状态
+    async checkLoginStatus() {
+        try {
+            if (!this.adsPowerService.driver) {
+                return false;
+            }
+
+            // 访问抖音个人页面
+            await this.adsPowerService.driver.get('https://www.douyin.com/user/self?from_tab_name=main');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // 检查是否存在登录相关的元素
+            const loginElements = await this.adsPowerService.driver.findElements(By.xpath("//*[contains(text(), '登录') or contains(text(), '扫码登录')]"));
+            const userInfoElements = await this.adsPowerService.driver.findElements(By.xpath("//*[contains(@class, 'user-info') or contains(@class, 'avatar')]"));
+
+            // 如果找到登录元素且没有用户信息元素，说明未登录
+            if (loginElements.length > 0 && userInfoElements.length === 0) {
+                return false;
+            }
+
+            // 检查URL是否包含登录相关参数
+            const currentUrl = await this.adsPowerService.driver.getCurrentUrl();
+            if (currentUrl.includes('login') || currentUrl.includes('auth')) {
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('检查登录状态失败:', error);
+            return false;
+        }
+    }
+
+    // 等待用户登录
+    async waitForLogin() {
+        try {
+            console.log('等待用户扫码登录...');
+            
+            // 访问登录页面
+            await this.adsPowerService.driver.get('https://www.douyin.com/');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // 等待登录完成，最多等待5分钟
+            const maxWaitTime = 5 * 60 * 1000; // 5分钟
+            const checkInterval = 10000; // 每10秒检查一次
+            let elapsedTime = 0;
+
+            while (elapsedTime < maxWaitTime) {
+                const isLoggedIn = await this.checkLoginStatus();
+                if (isLoggedIn) {
+                    console.log('用户登录成功！');
+                    return true;
+                }
+
+                await new Promise(resolve => setTimeout(resolve, checkInterval));
+                elapsedTime += checkInterval;
+                console.log(`等待登录中... (${Math.floor(elapsedTime / 1000)}秒)`);
+            }
+
+            console.log('等待登录超时，请手动登录');
+            return false;
+        } catch (error) {
+            console.error('等待登录失败:', error);
+            return false;
         }
     }
 

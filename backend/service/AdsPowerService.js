@@ -91,6 +91,73 @@ class AdsPowerService {
             throw error;
         }
     }
+
+    // 启动浏览器并打开抖音页面
+    static async startBrowserAndOpenDouyin(userId) {
+        try {
+            console.log(`开始为用户 ${userId} 启动浏览器并打开抖音页面`);
+            
+            // 连接AdsPower并获取driver
+            const { driver, debugPort } = await AdsPowerService.connectToAdsPower(userId);
+            
+            // 等待浏览器启动完成
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // 设置窗口大小为高分辨率
+            await driver.manage().window().setRect({
+                width: 1920,
+                height: 1080
+            });
+            
+            // 等待窗口调整完成
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 打开抖音页面
+            await driver.get('https://www.douyin.com/user/self?from_tab_name=main');
+            console.log(`用户 ${userId} 的抖音页面已打开`);
+            
+            // 等待页面加载
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            return { driver, debugPort };
+        } catch (error) {
+            console.error(`为用户 ${userId} 启动浏览器失败:`, error);
+            throw error;
+        }
+    }
+
+    // 确保服务正确设置
+    static async ensureServiceSetup(userId, driver, debugPort, serviceManager) {
+        try {
+            console.log(`确保用户 ${userId} 的服务正确设置`);
+            
+            // 获取或创建服务
+            let service = serviceManager.getService(userId);
+            if (!service) {
+                console.log(`为用户 ${userId} 创建新服务`);
+                service = serviceManager.InitService(userId);
+            }
+            
+            // 设置AdsPower服务
+            if (service.adsPowerService) {
+                service.adsPowerService.driver = driver;
+                service.adsPowerService.debugPort = debugPort;
+                
+                // 绑定网络请求钩子
+                await service.adsPowerService.bindHookToFetchRequest();
+                console.log(`用户 ${userId} 的网络钩子已绑定`);
+                
+                // 启动视频信息获取定时器
+                service.seleniumService.fetchVideoInfoTimer(service.taskScheduleService);
+                console.log(`用户 ${userId} 的视频信息获取定时器已启动`);
+            }
+            
+            return service;
+        } catch (error) {
+            console.error(`设置用户 ${userId} 服务失败:`, error);
+            throw error;
+        }
+    }
     
     // 关闭浏览器
     async closeBrowser() {
