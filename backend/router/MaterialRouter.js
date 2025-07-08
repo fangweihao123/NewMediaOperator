@@ -4,7 +4,20 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const axios = require('axios');
+const https = require('https');
 const serviceManager = require('../Manager/ServiceManager');
+
+// 创建忽略SSL证书验证的axios配置
+const createAxiosConfig = (url) => ({
+    url: url,
+    method: 'GET',
+    responseType: 'stream',
+    timeout: 300000, // 5分钟超时
+    maxContentLength: 500 * 1024 * 1024, // 500MB限制
+    httpsAgent: new https.Agent({
+        rejectUnauthorized: false // 忽略SSL证书验证
+    })
+});
 
 // 确保素材目录存在
 const materialDir = path.join(__dirname, '../materials');
@@ -157,13 +170,7 @@ module.exports = () => {
             }
 
             // 下载文件
-            const response = await axios({
-                url: url,
-                method: 'GET',
-                responseType: 'stream',
-                timeout: 300000, // 5分钟超时
-                maxContentLength: 500 * 1024 * 1024, // 500MB限制
-            });
+            const response = await axios(createAxiosConfig(url));
 
             const filename = crypto.randomUUID() + path.extname(url) || '.mp4';
             const filePath = path.join(materialDir, filename);
@@ -207,6 +214,88 @@ module.exports = () => {
             });
         } catch (error) {
             console.error('上传链接素材失败:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 批量上传链接素材
+    router.post('/uploadUrls', async (req, res) => {
+        try {
+            const { urls, namePrefix, description } = req.body;
+
+            if (!urls || !Array.isArray(urls) || urls.length === 0) {
+                return res.status(400).json({ error: '请提供素材链接数组' });
+            }
+
+            const results = [];
+            const errors = [];
+
+            // 并发处理所有链接
+            const uploadPromises = urls.map(async (url, index) => {
+                try {
+                    // 下载文件
+                    const response = await axios(createAxiosConfig(url));
+
+                    const filename = crypto.randomUUID() + path.extname(url) || '.mp4';
+                    const filePath = path.join(materialDir, filename);
+                    
+                    const writer = fs.createWriteStream(filePath);
+                    response.data.pipe(writer);
+
+                    await new Promise((resolve, reject) => {
+                        writer.on('finish', resolve);
+                        writer.on('error', reject);
+                    });
+
+                    // 获取文件信息
+                    const stats = fs.statSync(filePath);
+                    
+                    // 确定文件类型
+                    const ext = path.extname(url).toLowerCase();
+                    const isVideo = /\.(mp4|avi|mov|wmv|flv|webm)$/.test(ext);
+                    const isImage = /\.(jpeg|jpg|png|gif)$/.test(ext);
+                    
+                    const materialType = isVideo ? 'video' : isImage ? 'image' : 'document';
+
+                    // 生成素材名称
+                    const materialName = namePrefix ? 
+                        `${namePrefix}${urls.length > 1 ? ` (${index + 1})` : ''}` : 
+                        path.basename(url);
+
+                    // 保存素材信息
+                    const materialInfo = {
+                        id: filename,
+                        name: materialName,
+                        description: description || '',
+                        type: materialType,
+                        size: stats.size,
+                        url: `/materials/${filename}`,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    const infoPath = filePath + '.json';
+                    fs.writeFileSync(infoPath, JSON.stringify(materialInfo, null, 2));
+
+                    results.push(materialInfo);
+                } catch (error) {
+                    console.error(`上传素材链接失败 [${url}]:`, error);
+                    errors.push({
+                        url: url,
+                        error: error.message
+                    });
+                }
+            });
+
+            await Promise.all(uploadPromises);
+
+            res.json({ 
+                success: true, 
+                message: `成功上传 ${results.length} 个素材${errors.length > 0 ? `，${errors.length} 个失败` : ''}`,
+                materials: results,
+                errors: errors
+            });
+        } catch (error) {
+            console.error('批量上传链接素材失败:', error);
             res.status(500).json({ error: error.message });
         }
     });

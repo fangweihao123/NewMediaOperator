@@ -4,6 +4,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const https = require('https');
 const pLimit = require('p-limit');
 
 // 确保临时目录存在
@@ -55,7 +56,10 @@ module.exports = () => {
             const response = await axios({
                 url: videoUrl,
                 method: 'GET',
-                responseType: 'stream'
+                responseType: 'stream',
+                httpsAgent: new https.Agent({
+                    rejectUnauthorized: false // 忽略SSL证书验证
+                })
             });
             
             const filename = `ai_video_${crypto.randomUUID()}.mp4`;
@@ -74,6 +78,39 @@ module.exports = () => {
         } catch (error) {
             console.error('视频下载失败:', error);
             throw new Error('视频下载失败: ' + error.message);
+        }
+    };
+
+    // 下载视频链接到本地
+    const downloadVideoFromUrl = async (videoUrl) => {
+        try {
+            console.log('开始下载视频链接...', videoUrl);
+            
+            const response = await axios({
+                url: videoUrl,
+                method: 'GET',
+                responseType: 'stream',
+                httpsAgent: new https.Agent({
+                    rejectUnauthorized: false // 忽略SSL证书验证
+                })
+            });
+            
+            const filename = `url_video_${crypto.randomUUID()}.mp4`;
+            const localPath = path.join(tempDir, filename);
+            
+            const writer = fs.createWriteStream(localPath);
+            response.data.pipe(writer);
+            
+            return new Promise((resolve, reject) => {
+                writer.on('finish', () => {
+                    console.log('视频链接下载完成:', localPath);
+                    resolve(localPath);
+                });
+                writer.on('error', reject);
+            });
+        } catch (error) {
+            console.error('视频链接下载失败:', error);
+            throw new Error('视频链接下载失败: ' + error.message);
         }
     };
     

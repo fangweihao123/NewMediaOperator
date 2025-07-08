@@ -9,6 +9,7 @@
 ### 1. 素材上传
 - **本地文件上传**：支持拖拽或点击上传本地视频、图片文件
 - **链接上传**：支持通过URL链接上传素材
+- **批量链接上传**：支持多条链接同时上传，以换行符分割
 - **文件格式支持**：视频（mp4, avi, mov, wmv, flv, webm）、图片（jpeg, jpg, png, gif）
 - **文件大小限制**：最大500MB
 
@@ -30,6 +31,12 @@
 2. 选择文件或输入链接
 3. 填写素材名称和描述
 4. 点击"上传素材"
+
+**批量链接上传说明：**
+- 在链接输入框中，每行输入一个链接
+- 系统会自动解析并预览所有链接
+- 支持批量名称前缀，如输入"素材"，则生成的素材名称将为"素材 (1)"、"素材 (2)"等
+- 无效链接会显示红色提示，不会影响其他有效链接的上传
 
 ### 2. 选择素材
 1. 在素材库中点击要使用的素材
@@ -58,9 +65,10 @@
 ### API接口
 - `GET /api/materials` - 获取素材列表
 - `POST /api/materials/upload` - 上传本地素材
-- `POST /api/materials/uploadUrl` - 上传链接素材
+- `POST /api/materials/uploadUrl` - 上传单个链接素材
+- `POST /api/materials/uploadUrls` - 批量上传链接素材
 - `DELETE /api/materials/:id` - 删除素材
-- `GET /api/materials/:profileId/:filename` - 访问素材文件
+- `GET /api/materials/:filename` - 访问素材文件
 
 ## 文件结构
 

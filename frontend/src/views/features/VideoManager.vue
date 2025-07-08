@@ -210,17 +210,23 @@
         <el-dialog
           v-model="uploadMaterialUrlDialogVisible"
           title="上传链接素材"
-          width="600px"
+          width="700px"
         >
           <el-form :model="uploadMaterialUrlForm" label-width="120px">
             <el-form-item label="素材链接">
               <el-input 
-                v-model="uploadMaterialUrlForm.url" 
-                placeholder="请输入素材链接">
+                v-model="uploadMaterialUrlForm.urls" 
+                type="textarea"
+                :rows="6"
+                placeholder="请输入素材链接，每行一个链接&#10;例如：&#10;https://example.com/video1.mp4&#10;https://example.com/video2.mp4&#10;https://example.com/image1.jpg">
               </el-input>
+              <div class="upload-tip">
+                <el-icon><InfoFilled /></el-icon>
+                <span>支持多个链接，每行输入一个链接，以换行符分割</span>
+              </div>
             </el-form-item>
-            <el-form-item label="素材名称">
-              <el-input v-model="uploadMaterialUrlForm.name" placeholder="请输入素材名称"></el-input>
+            <el-form-item label="批量名称前缀">
+              <el-input v-model="uploadMaterialUrlForm.namePrefix" placeholder="请输入批量名称前缀，如：素材"></el-input>
             </el-form-item>
             <el-form-item label="素材描述">
               <el-input 
@@ -230,6 +236,22 @@
                 placeholder="请输入素材描述">
               </el-input>
             </el-form-item>
+            
+            <!-- 链接预览 -->
+            <el-form-item v-if="materialUrlList.length > 0" label="链接预览">
+              <div class="url-preview-list">
+                <div 
+                  v-for="(url, index) in materialUrlList" 
+                  :key="index"
+                  class="url-preview-item"
+                  :class="{ 'invalid': !isValidUrl(url) }"
+                >
+                  <span class="url-index">{{ index + 1 }}</span>
+                  <span class="url-text">{{ url }}</span>
+                  <span class="url-status" v-if="!isValidUrl(url)">无效链接</span>
+                </div>
+              </div>
+            </el-form-item>
           </el-form>
           <template #footer>
             <span class="dialog-footer">
@@ -237,8 +259,8 @@
               <el-button 
                 type="primary" 
                 @click="handleUploadMaterialUrl"
-                :disabled="isUploadingMaterialUrl || !uploadMaterialUrlForm.url">
-                上传素材
+                :disabled="isUploadingMaterialUrl || !hasValidMaterialUrls()">
+                上传素材 ({{ getValidMaterialUrlCount() }}个)
               </el-button>
             </span>
           </template>
@@ -470,13 +492,14 @@ export default {
         description: '',
       },
       uploadMaterialUrlForm: {
-        url: '',
-        name: '',
+        urls: '',
+        namePrefix: '',
         description: '',
       },
       materialFileList: [],
       uploadUrlList: [],
       uploadProgress: [],
+      materialUrlList: [],
       uploadMode: 'ai',
     }
   },
@@ -498,6 +521,11 @@ export default {
         console.log("newUserId", newUserId);
         this.getVideosFromAdsPower(newUserId);
         this.getMaterials();
+      }
+    },
+    'uploadMaterialUrlForm.urls': {
+      handler() {
+        this.parseMaterialUrls();
       }
     }
   },
@@ -556,10 +584,11 @@ export default {
     showUploadMaterialUrlDialog() {
       this.uploadMaterialUrlDialogVisible = true;
       this.uploadMaterialUrlForm = {
-        url: '',
-        name: '',
+        urls: '',
+        namePrefix: '',
         description: '',
       };
+      this.materialUrlList = [];
     },
 
     handleMaterialFileChange(file) {
@@ -604,27 +633,38 @@ export default {
     },
 
     async handleUploadMaterialUrl() {
-      if (!this.uploadMaterialUrlForm.url) {
+      if (!this.uploadMaterialUrlForm.urls) {
         this.$message.warning('请输入素材链接');
         return;
       }
 
-      if (!this.uploadMaterialUrlForm.name) {
-        this.$message.warning('请输入素材名称');
+      if (!this.hasValidMaterialUrls()) {
+        this.$message.warning('请至少输入一个有效的素材链接');
+        return;
+      }
+
+      if (!this.uploadMaterialUrlForm.namePrefix) {
+        this.$message.warning('请输入批量名称前缀');
         return;
       }
 
       this.isUploadingMaterialUrl = true;
+      
+      // 解析链接
+      const urls = this.parseMaterialUrls();
+      const validUrls = urls.filter(url => this.isValidUrl(url));
+
       try {
+        // 使用批量上传接口
         const uploadData = {
-          url: this.uploadMaterialUrlForm.url,
-          name: this.uploadMaterialUrlForm.name,
+          urls: validUrls,
+          namePrefix: this.uploadMaterialUrlForm.namePrefix,
           description: this.uploadMaterialUrlForm.description,
         };
 
-        await api.post('/materials/uploadUrl', uploadData);
-
-        this.$message.success('素材上传成功');
+        const response = await api.post('/materials/uploadUrls', uploadData);
+        
+        this.$message.success(response.data.message);
         this.uploadMaterialUrlDialogVisible = false;
         this.getMaterials();
       } catch (error) {
@@ -701,6 +741,16 @@ export default {
       this.uploadUrlList = urls;
     },
 
+    // 解析素材链接
+    parseMaterialUrls() {
+      const urls = this.uploadMaterialUrlForm.urls
+        .split('\n')
+        .map(url => url.trim())
+        .filter(url => url.length > 0);
+      this.materialUrlList = urls;
+      return urls;
+    },
+
     // 验证URL是否有效
     isValidUrl(url) {
       try {
@@ -714,6 +764,16 @@ export default {
     // 检查是否有有效链接
     hasValidUrls() {
       return this.uploadUrlList.some(url => this.isValidUrl(url));
+    },
+
+    // 检查是否有有效素材链接
+    hasValidMaterialUrls() {
+      return this.materialUrlList.some(url => this.isValidUrl(url));
+    },
+
+    // 获取有效素材链接数量
+    getValidMaterialUrlCount() {
+      return this.materialUrlList.filter(url => this.isValidUrl(url)).length;
     },
 
     // 处理视频链接上传
@@ -818,6 +878,8 @@ export default {
         throw error;
       }
     },
+
+
 
     async handleUpload() {
       if (!this.uploadForm.title || !this.uploadForm.description) {
@@ -1731,6 +1793,72 @@ export default {
 .material-type-small {
   font-size: 12px;
   color: #909399;
+}
+
+/* 上传提示样式 */
+.upload-tip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  color: #909399;
+  font-size: 12px;
+}
+
+/* 链接预览样式 */
+.url-preview-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.url-preview-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e4e7ed;
+  gap: 10px;
+}
+
+.url-preview-item:last-child {
+  border-bottom: none;
+}
+
+.url-preview-item.invalid {
+  background: #fef0f0;
+  color: #f56c6c;
+}
+
+.url-index {
+  background: #409eff;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.url-preview-item.invalid .url-index {
+  background: #f56c6c;
+}
+
+.url-text {
+  flex: 1;
+  font-family: monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.url-status {
+  color: #f56c6c;
+  font-size: 12px;
+  font-weight: bold;
 }
 
 /* 响应式设计 */

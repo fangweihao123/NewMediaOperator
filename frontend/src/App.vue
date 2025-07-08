@@ -4,14 +4,14 @@
       <el-header>
         <h1>抖音运营助手</h1>
         <div class="header-actions">
-          <el-button 
+          <!--el-button 
             type="primary" 
             @click="showCreateAccountDialog"
             size="large"
           >
             <el-icon><Plus /></el-icon>
             添加账号
-          </el-button>
+          </el-button-->
           <el-dropdown v-if="isBound" trigger="click">
             <div class="account-dropdown">
               <span>{{ accountInfo.user_id }} - {{ accountInfo.name }}</span>
